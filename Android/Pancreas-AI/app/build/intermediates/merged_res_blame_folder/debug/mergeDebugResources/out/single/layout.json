@@ -4,6 +4,10 @@
         "source": "com.pancreas.ai.app-main-41:/layout/activity_main.xml"
     },
     {
+        "merged": "com.pancreas.ai.app-mergeDebugResources-38:/layout/activity_oauth_webview.xml",
+        "source": "com.pancreas.ai.app-main-41:/layout/activity_oauth_webview.xml"
+    },
+    {
         "merged": "com.pancreas.ai.app-mergeDebugResources-38:/layout/activity_settings.xml",
         "source": "com.pancreas.ai.app-main-41:/layout/activity_settings.xml"
     }

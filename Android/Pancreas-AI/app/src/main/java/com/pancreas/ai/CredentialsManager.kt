@@ -7,12 +7,14 @@ import androidx.security.crypto.MasterKey
 
 object CredentialsManager {
 
-    private const val PREFS_FILE     = "dexcom_secure_prefs"
-    private const val KEY_USERNAME   = "dexcom_username"
-    private const val KEY_PASSWORD   = "dexcom_password"
-    private const val KEY_REGION     = "dexcom_region"      // "US" or "OUTSIDE"
-    private const val KEY_SESSION_ID = "dexcom_session_id"
-    private const val KEY_INTERVAL   = "refresh_interval"   // minutes
+    private const val PREFS_FILE      = "dexcom_secure_prefs_v2"
+    private const val KEY_CLIENT_ID   = "client_id"
+    private const val KEY_CLIENT_SEC  = "client_secret"
+    private const val KEY_SANDBOX     = "use_sandbox"
+    private const val KEY_ACCESS_TOK  = "access_token"
+    private const val KEY_REFRESH_TOK = "refresh_token"
+    private const val KEY_TOKEN_EXP   = "token_expires_at"   // epoch ms
+    private const val KEY_INTERVAL    = "refresh_interval"   // minutes
 
     private fun prefs(ctx: Context): SharedPreferences {
         val masterKey = MasterKey.Builder(ctx)
@@ -25,36 +27,70 @@ object CredentialsManager {
         )
     }
 
-    fun saveCredentials(ctx: Context, username: String, password: String, region: String) {
+    // ─── Client Credentials ───────────────────────────────────────────────────
+
+    fun saveClientCredentials(ctx: Context, clientId: String, clientSecret: String, sandbox: Boolean) {
         prefs(ctx).edit()
-            .putString(KEY_USERNAME, username)
-            .putString(KEY_PASSWORD, password)
-            .putString(KEY_REGION, region)
-            .remove(KEY_SESSION_ID)   // invalidate old session on credential change
+            .putString(KEY_CLIENT_ID,  clientId)
+            .putString(KEY_CLIENT_SEC, clientSecret)
+            .putBoolean(KEY_SANDBOX,   sandbox)
+            .remove(KEY_ACCESS_TOK)
+            .remove(KEY_REFRESH_TOK)
+            .remove(KEY_TOKEN_EXP)
             .apply()
     }
 
-    fun getUsername(ctx: Context)  = prefs(ctx).getString(KEY_USERNAME, "") ?: ""
-    fun getPassword(ctx: Context)  = prefs(ctx).getString(KEY_PASSWORD, "") ?: ""
-    fun getRegion(ctx: Context)    = prefs(ctx).getString(KEY_REGION, "US") ?: "US"
+    fun getClientId(ctx: Context)     = prefs(ctx).getString(KEY_CLIENT_ID,  "") ?: ""
+    fun getClientSecret(ctx: Context) = prefs(ctx).getString(KEY_CLIENT_SEC, "") ?: ""
+    fun useSandbox(ctx: Context)      = prefs(ctx).getBoolean(KEY_SANDBOX, false)
 
-    fun saveSessionId(ctx: Context, id: String) =
-        prefs(ctx).edit().putString(KEY_SESSION_ID, id).apply()
+    fun hasClientCredentials(ctx: Context) =
+        getClientId(ctx).isNotBlank() && getClientSecret(ctx).isNotBlank()
 
-    fun getSessionId(ctx: Context) = prefs(ctx).getString(KEY_SESSION_ID, null)
+    // ─── OAuth Tokens ─────────────────────────────────────────────────────────
 
-    fun clearSession(ctx: Context) =
-        prefs(ctx).edit().remove(KEY_SESSION_ID).apply()
+    fun saveTokens(ctx: Context, accessToken: String, refreshToken: String, expiresIn: Int) {
+        val expiresAt = System.currentTimeMillis() + (expiresIn - 60) * 1000L // 60s buffer
+        prefs(ctx).edit()
+            .putString(KEY_ACCESS_TOK,  accessToken)
+            .putString(KEY_REFRESH_TOK, refreshToken)
+            .putLong(KEY_TOKEN_EXP,     expiresAt)
+            .apply()
+    }
 
-    fun hasCredentials(ctx: Context): Boolean =
-        getUsername(ctx).isNotBlank() && getPassword(ctx).isNotBlank()
+    fun getAccessToken(ctx: Context)  = prefs(ctx).getString(KEY_ACCESS_TOK,  null)
+    fun getRefreshToken(ctx: Context) = prefs(ctx).getString(KEY_REFRESH_TOK, null)
+    fun getTokenExpiresAt(ctx: Context) = prefs(ctx).getLong(KEY_TOKEN_EXP, 0L)
 
-    fun getRefreshInterval(ctx: Context): Int =
-        prefs(ctx).getInt(KEY_INTERVAL, 5)
+    fun isAccessTokenValid(ctx: Context): Boolean {
+        val token = getAccessToken(ctx) ?: return false
+        return token.isNotBlank() && System.currentTimeMillis() < getTokenExpiresAt(ctx)
+    }
 
+    fun isConnected(ctx: Context) = getRefreshToken(ctx) != null
+
+    fun clearTokens(ctx: Context) {
+        prefs(ctx).edit()
+            .remove(KEY_ACCESS_TOK)
+            .remove(KEY_REFRESH_TOK)
+            .remove(KEY_TOKEN_EXP)
+            .apply()
+    }
+
+    // ─── App Settings ─────────────────────────────────────────────────────────
+
+    fun getRefreshInterval(ctx: Context) = prefs(ctx).getInt(KEY_INTERVAL, 5)
     fun setRefreshInterval(ctx: Context, minutes: Int) =
         prefs(ctx).edit().putInt(KEY_INTERVAL, minutes).apply()
 
-    fun getBaseUrl(ctx: Context): String =
-        if (getRegion(ctx) == "US") DEXCOM_BASE_US else DEXCOM_BASE_OUTSIDE
+    // ─── OAuth URL Builder ────────────────────────────────────────────────────
+
+    fun buildAuthUrl(ctx: Context): String {
+        val base = if (useSandbox(ctx)) DEXCOM_BASE_SANDBOX else DEXCOM_BASE_PROD
+        return "${base}v3/oauth2/login" +
+            "?client_id=${getClientId(ctx)}" +
+            "&redirect_uri=${android.net.Uri.encode(REDIRECT_URI)}" +
+            "&response_type=code" +
+            "&scope=$OAUTH_SCOPE"
+    }
 }

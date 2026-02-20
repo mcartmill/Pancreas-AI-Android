@@ -9,376 +9,229 @@
     <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/bg_surface"
-        app:elevation="0dp">
-
+        android:background="@color/bg_surface" app:elevation="0dp">
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
             app:titleTextColor="@color/text_primary"
             android:background="@color/bg_surface" />
-
     </com.google.android.material.appbar.AppBarLayout>
 
     <androidx.core.widget.NestedScrollView
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_width="match_parent" android:layout_height="match_parent"
         app:layout_behavior="@string/appbar_scrolling_view_behavior"
-        android:padding="16dp"
-        android:clipToPadding="false">
+        android:padding="16dp" android:clipToPadding="false">
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
             android:orientation="vertical">
 
-            <!-- Dexcom Credentials Card -->
+            <!-- ── Developer API Credentials ───────────────────────────────── -->
             <com.google.android.material.card.MaterialCardView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                app:cardBackgroundColor="@color/bg_surface"
-                app:cardCornerRadius="16dp"
-                app:strokeColor="@color/border"
-                app:strokeWidth="1dp"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                app:cardBackgroundColor="@color/bg_surface" app:cardCornerRadius="16dp"
+                app:strokeColor="@color/border" app:strokeWidth="1dp"
                 android:layout_marginBottom="16dp">
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:orientation="vertical" android:padding="20dp">
 
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="20dp">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="DEXCOM DEVELOPER CREDENTIALS"
+                        android:textColor="@color/dexcom_cyan" android:textSize="11sp"
+                        android:letterSpacing="0.15" android:textStyle="bold"
+                        android:layout_marginBottom="4dp"/>
 
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="DEXCOM SHARE CREDENTIALS"
-                        android:textColor="@color/dexcom_cyan"
-                        android:textSize="11sp"
-                        android:letterSpacing="0.15"
-                        android:textStyle="bold"
-                        android:layout_marginBottom="4dp" />
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="Register your app at developer.dexcom.com to get a Client ID and Secret."
+                        android:textColor="@color/text_secondary" android:textSize="12sp"
+                        android:layout_marginBottom="16dp"/>
 
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Use your Dexcom account credentials (same as the Dexcom app)"
-                        android:textColor="@color/text_secondary"
-                        android:textSize="12sp"
-                        android:layout_marginBottom="20dp" />
-
-                    <!-- Username -->
+                    <!-- Client ID -->
                     <com.google.android.material.textfield.TextInputLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:hint="Dexcom Username"
-                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-                        app:boxStrokeColor="@color/dexcom_cyan"
-                        app:hintTextColor="@color/text_secondary"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:hint="Client ID" style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                        app:boxStrokeColor="@color/dexcom_cyan" app:hintTextColor="@color/text_secondary"
                         android:layout_marginBottom="12dp">
-
                         <com.google.android.material.textfield.TextInputEditText
-                            android:id="@+id/etUsername"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:inputType="textEmailAddress"
-                            android:textColor="@color/text_primary"
-                            android:backgroundTint="@color/bg_surface" />
-
+                            android:id="@+id/etClientId"
+                            android:layout_width="match_parent" android:layout_height="wrap_content"
+                            android:inputType="text" android:textColor="@color/text_primary"/>
                     </com.google.android.material.textfield.TextInputLayout>
 
-                    <!-- Password -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
+                    <!-- Client Secret + toggle -->
+                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:orientation="horizontal" android:gravity="center_vertical"
                         android:layout_marginBottom="16dp">
-
                         <com.google.android.material.textfield.TextInputLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:hint="Dexcom Password"
+                            android:layout_width="0dp" android:layout_height="wrap_content"
+                            android:layout_weight="1" android:hint="Client Secret"
                             style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-                            app:boxStrokeColor="@color/dexcom_cyan"
-                            app:hintTextColor="@color/text_secondary">
-
+                            app:boxStrokeColor="@color/dexcom_cyan" app:hintTextColor="@color/text_secondary">
                             <com.google.android.material.textfield.TextInputEditText
-                                android:id="@+id/etPassword"
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:inputType="textPassword"
-                                android:textColor="@color/text_primary" />
-
+                                android:id="@+id/etClientSecret"
+                                android:layout_width="match_parent" android:layout_height="wrap_content"
+                                android:inputType="textPassword" android:textColor="@color/text_primary"/>
                         </com.google.android.material.textfield.TextInputLayout>
-
-                        <ImageButton
-                            android:id="@+id/btnTogglePassword"
-                            android:layout_width="48dp"
-                            android:layout_height="48dp"
+                        <ImageButton android:id="@+id/btnToggleSecret"
+                            android:layout_width="48dp" android:layout_height="48dp"
                             android:background="?attr/selectableItemBackgroundBorderless"
                             android:src="@android:drawable/ic_menu_view"
-                            android:tint="@color/text_secondary"
-                            android:layout_marginStart="8dp"
-                            android:contentDescription="Toggle password visibility" />
-
+                            android:tint="@color/text_secondary" android:layout_marginStart="8dp"
+                            android:contentDescription="Toggle secret visibility"/>
                     </LinearLayout>
 
-                    <!-- Region -->
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Server Region"
-                        android:textColor="@color/text_secondary"
-                        android:textSize="13sp"
-                        android:layout_marginBottom="8dp" />
-
-                    <RadioGroup
-                        android:id="@+id/rgRegion"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
+                    <!-- Sandbox switch -->
+                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:orientation="horizontal" android:gravity="center_vertical"
                         android:layout_marginBottom="20dp">
-
-                        <RadioButton
-                            android:id="@+id/rbUs"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="United States"
-                            android:textColor="@color/text_primary"
-                            android:buttonTint="@color/dexcom_cyan"
-                            android:layout_marginEnd="24dp" />
-
-                        <RadioButton
-                            android:id="@+id/rbOutsideUs"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Outside US"
-                            android:textColor="@color/text_primary"
-                            android:buttonTint="@color/dexcom_cyan" />
-
-                    </RadioGroup>
-
-                    <!-- Action Buttons -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal">
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btnSave"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="Save"
-                            app:backgroundTint="@color/dexcom_cyan"
-                            android:textColor="@color/bg_primary"
-                            android:layout_marginEnd="8dp" />
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btnTest"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="Test Connection"
-                            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                            app:strokeColor="@color/dexcom_cyan"
-                            android:textColor="@color/dexcom_cyan" />
-
+                        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
+                            android:layout_weight="1" android:orientation="vertical">
+                            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                                android:text="Use Sandbox" android:textColor="@color/text_primary"
+                                android:textSize="14sp"/>
+                            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                                android:text="Uses sandbox-api.dexcom.com with test data"
+                                android:textColor="@color/text_secondary" android:textSize="11sp"/>
+                        </LinearLayout>
+                        <com.google.android.material.switchmaterial.SwitchMaterial
+                            android:id="@+id/switchSandbox"
+                            android:layout_width="wrap_content" android:layout_height="wrap_content"
+                            app:thumbTint="@color/dexcom_cyan" app:trackTint="@color/border"/>
                     </LinearLayout>
 
-                    <!-- Test Result -->
-                    <ProgressBar
-                        android:id="@+id/testProgressBar"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:indeterminate="true"
-                        android:indeterminateTint="@color/dexcom_cyan"
-                        android:visibility="gone"
-                        android:layout_marginTop="12dp" />
-
-                    <TextView
-                        android:id="@+id/tvTestResult"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:visibility="gone"
-                        android:layout_marginTop="12dp"
-                        android:textSize="13sp"
-                        android:padding="12dp"
-                        android:background="@drawable/bg_result" />
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnSave"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:text="Save Credentials"
+                        app:backgroundTint="@color/dexcom_cyan" android:textColor="@color/bg_primary"/>
 
                 </LinearLayout>
-
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- Refresh Settings Card -->
+            <!-- ── OAuth Connection ─────────────────────────────────────────── -->
             <com.google.android.material.card.MaterialCardView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                app:cardBackgroundColor="@color/bg_surface"
-                app:cardCornerRadius="16dp"
-                app:strokeColor="@color/border"
-                app:strokeWidth="1dp"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                app:cardBackgroundColor="@color/bg_surface" app:cardCornerRadius="16dp"
+                app:strokeColor="@color/border" app:strokeWidth="1dp"
                 android:layout_marginBottom="16dp">
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:orientation="vertical" android:padding="20dp">
 
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="20dp">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="DEXCOM AUTHORIZATION"
+                        android:textColor="@color/dexcom_cyan" android:textSize="11sp"
+                        android:letterSpacing="0.15" android:textStyle="bold"
+                        android:layout_marginBottom="12dp"/>
+
+                    <TextView android:id="@+id/tvConnectionStatus"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:text="○ Not connected"
+                        android:textColor="@color/glucose_high" android:textSize="14sp"
+                        android:layout_marginBottom="16dp"/>
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnConnect"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:text="Connect with Dexcom"
+                        app:backgroundTint="@color/dexcom_cyan" android:textColor="@color/bg_primary"
+                        android:layout_marginBottom="8dp"/>
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnDisconnect"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:text="Disconnect"
+                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                        app:strokeColor="@color/glucose_low" android:textColor="@color/glucose_low"
+                        android:layout_marginBottom="8dp"
+                        android:visibility="gone"/>
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnDiagnose"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:text="Check Data Range"
+                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                        app:strokeColor="@color/dexcom_cyan" android:textColor="@color/dexcom_cyan"
+                        android:layout_marginBottom="4dp"
+                        android:visibility="gone"/>
 
                     <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="REFRESH SETTINGS"
-                        android:textColor="@color/dexcom_cyan"
-                        android:textSize="11sp"
-                        android:letterSpacing="0.15"
-                        android:textStyle="bold"
-                        android:layout_marginBottom="16dp" />
-
-                    <LinearLayout
+                        android:id="@+id/tvDiagnosticResult"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:layout_marginBottom="8dp">
+                        android:textColor="@color/text_secondary"
+                        android:textSize="12sp"
+                        android:fontFamily="monospace"
+                        android:padding="8dp"
+                        android:visibility="gone"/>
 
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="Auto-refresh interval"
-                            android:textColor="@color/text_primary"
-                            android:textSize="14sp" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
 
-                        <TextView
-                            android:id="@+id/tvIntervalValue"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="5 min"
-                            android:textColor="@color/dexcom_cyan"
-                            android:textSize="14sp"
-                            android:textStyle="bold" />
+            <!-- ── Refresh interval ─────────────────────────────────────────── -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                app:cardBackgroundColor="@color/bg_surface" app:cardCornerRadius="16dp"
+                app:strokeColor="@color/border" app:strokeWidth="1dp"
+                android:layout_marginBottom="16dp">
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:orientation="vertical" android:padding="20dp">
 
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="REFRESH INTERVAL"
+                        android:textColor="@color/dexcom_cyan" android:textSize="11sp"
+                        android:letterSpacing="0.15" android:textStyle="bold"
+                        android:layout_marginBottom="12dp"/>
+
+                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:orientation="horizontal" android:gravity="center_vertical"
+                        android:layout_marginBottom="4dp">
+                        <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                            android:layout_weight="1" android:text="Auto-refresh interval"
+                            android:textColor="@color/text_primary" android:textSize="14sp"/>
+                        <TextView android:id="@+id/tvIntervalValue"
+                            android:layout_width="wrap_content" android:layout_height="wrap_content"
+                            android:text="5 min" android:textColor="@color/dexcom_cyan"
+                            android:textSize="14sp" android:textStyle="bold"/>
                     </LinearLayout>
 
                     <com.google.android.material.slider.Slider
                         android:id="@+id/sliderInterval"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:valueFrom="1"
-                        android:valueTo="30"
-                        android:stepSize="1"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:valueFrom="1" android:valueTo="30" android:stepSize="1"
                         app:thumbColor="@color/dexcom_cyan"
                         app:trackColorActive="@color/dexcom_cyan"
-                        app:trackColorInactive="@color/border"
-                        android:value="5" />
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal">
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                            android:text="1 min" android:textColor="@color/text_secondary" android:textSize="11sp" />
-                        <View android:layout_width="0dp" android:layout_height="0dp" android:layout_weight="1" />
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                            android:text="30 min" android:textColor="@color/text_secondary" android:textSize="11sp" />
-                    </LinearLayout>
-
+                        app:trackColorInactive="@color/border" android:value="5"/>
                 </LinearLayout>
-
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- Advanced Card -->
+            <!-- ── About / Link ─────────────────────────────────────────────── -->
             <com.google.android.material.card.MaterialCardView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                app:cardBackgroundColor="@color/bg_surface"
-                app:cardCornerRadius="16dp"
-                app:strokeColor="@color/border"
-                app:strokeWidth="1dp"
-                android:layout_marginBottom="16dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="20dp">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="ADVANCED"
-                        android:textColor="@color/dexcom_cyan"
-                        android:textSize="11sp"
-                        android:letterSpacing="0.15"
-                        android:textStyle="bold"
-                        android:layout_marginBottom="16dp" />
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnClearSession"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Clear Cached Session"
-                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                        app:strokeColor="@color/border"
-                        android:textColor="@color/text_secondary" />
-
-                </LinearLayout>
-
-            </com.google.android.material.card.MaterialCardView>
-
-            <!-- Info Card -->
-            <com.google.android.material.card.MaterialCardView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                app:cardBackgroundColor="@color/bg_surface"
-                app:cardCornerRadius="16dp"
-                app:strokeColor="@color/border"
-                app:strokeWidth="1dp"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                app:cardBackgroundColor="@color/bg_surface" app:cardCornerRadius="16dp"
+                app:strokeColor="@color/border" app:strokeWidth="1dp"
                 android:layout_marginBottom="32dp">
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:orientation="vertical" android:padding="20dp">
 
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="20dp">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
                         android:text="ℹ️  ABOUT"
-                        android:textColor="@color/text_secondary"
-                        android:textSize="11sp"
-                        android:letterSpacing="0.15"
-                        android:layout_marginBottom="12dp" />
+                        android:textColor="@color/text_secondary" android:textSize="11sp"
+                        android:letterSpacing="0.15" android:layout_marginBottom="12dp"/>
 
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="Pancreas AI uses the Dexcom Share API — the same service used by follower apps like Dexcom Follow. Sharing must be enabled in your Dexcom app.\n\nYour credentials are stored securely using Android Keystore encryption."
-                        android:textColor="@color/text_secondary"
-                        android:textSize="13sp"
-                        android:lineSpacingMultiplier="1.4"
-                        android:layout_marginBottom="12dp" />
+                    <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:text="Pancreas AI uses the official Dexcom Developer API with OAuth2. Register your app at the Dexcom Developer Portal to obtain credentials.\n\nSet your redirect URI to:\ncom.pancreas.ai://oauth2callback"
+                        android:textColor="@color/text_secondary" android:textSize="13sp"
+                        android:lineSpacingMultiplier="1.4" android:layout_marginBottom="12dp"/>
 
-                    <TextView
-                        android:id="@+id/tvHelpLink"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="How to enable Dexcom Share →"
-                        android:textColor="@color/dexcom_cyan"
-                        android:textSize="13sp"
-                        android:padding="4dp" />
+                    <TextView android:id="@+id/tvDevPortalLink"
+                        android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="Open Dexcom Developer Portal →"
+                        android:textColor="@color/dexcom_cyan" android:textSize="13sp"
+                        android:padding="4dp"/>
 
                 </LinearLayout>
-
             </com.google.android.material.card.MaterialCardView>
 
         </LinearLayout>
-
     </androidx.core.widget.NestedScrollView>
-
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

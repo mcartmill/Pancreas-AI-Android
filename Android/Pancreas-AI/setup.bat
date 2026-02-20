@@ -159,6 +159,7 @@ echo         android:supportsRtl="true"
 echo         android:theme="@style/Theme.PancreasAI"
 echo         android:usesCleartextTraffic="false"^>
 echo         ^<activity android:name=".MainActivity" android:exported="true"
+echo             android:launchMode="singleTop"
 echo             android:windowSoftInputMode="adjustResize"^>
 echo             ^<intent-filter^>
 echo                 ^<action android:name="android.intent.action.MAIN" /^>
@@ -168,6 +169,8 @@ echo         ^</activity^>
 echo         ^<activity android:name=".SettingsActivity" android:exported="false"
 echo             android:label="Settings"
 echo             android:parentActivityName=".MainActivity" /^>
+echo         ^<activity android:name=".OAuthWebViewActivity" android:exported="false"
+echo             android:label="Connect to Dexcom" /^>
 echo     ^</application^>
 echo ^</manifest^>
 ) > "%ROOT%\app\src\main\AndroidManifest.xml"
@@ -176,7 +179,7 @@ echo    [OK] AndroidManifest.xml
 :: ─── [6] Copy Kotlin sources ──────────────────────────────────────────────────
 echo [6/9] Copying Kotlin source files...
 set "KT_OK=0"
-for %%F in (DexcomApiService.kt CredentialsManager.kt GlucoseRepository.kt GlucoseViewModel.kt MainActivity.kt SettingsActivity.kt BootReceiver.kt) do (
+for %%F in (DexcomApiService.kt CredentialsManager.kt GlucoseRepository.kt GlucoseViewModel.kt MainActivity.kt SettingsActivity.kt OAuthWebViewActivity.kt BootReceiver.kt) do (
     if exist "%BAT_DIR%%%F" (
         copy /Y "%BAT_DIR%%%F" "%PKG%\%%F" >nul
         echo    [OK] %%F
@@ -195,7 +198,7 @@ if "!KT_OK!"=="0" (
 :: ─── [7] Copy resource files ──────────────────────────────────────────────────
 echo [7/9] Copying resource files...
 set "RES_OK=0"
-for %%F in (activity_main.xml activity_settings.xml) do (
+for %%F in (activity_main.xml activity_settings.xml activity_oauth_webview.xml) do (
     if exist "%BAT_DIR%res\layout\%%F" (
         copy /Y "%BAT_DIR%res\layout\%%F" "%RES%\layout\%%F" >nul
         echo    [OK] layout\%%F

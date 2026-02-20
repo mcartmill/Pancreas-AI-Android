@@ -70,6 +70,9 @@ public final class ActivityMainBinding implements ViewBinding {
   public final TextView tvLastUpdated;
 
   @NonNull
+  public final TextView tvNoCredsMessage;
+
+  @NonNull
   public final TextView tvRangeLabel;
 
   @NonNull
@@ -101,10 +104,10 @@ public final class ActivityMainBinding implements ViewBinding {
       @NonNull ProgressBar progressBar, @NonNull MaterialToolbar toolbar,
       @NonNull TextView tvAvgGlucose, @NonNull TextView tvCurrentGlucose,
       @NonNull TextView tvErrorMessage, @NonNull TextView tvLastUpdated,
-      @NonNull TextView tvRangeLabel, @NonNull TextView tvReadingCount,
-      @NonNull TextView tvReadingTime, @NonNull TextView tvTimeHigh,
-      @NonNull TextView tvTimeInRange, @NonNull TextView tvTimeLow, @NonNull TextView tvTrend,
-      @NonNull TextView tvUnit) {
+      @NonNull TextView tvNoCredsMessage, @NonNull TextView tvRangeLabel,
+      @NonNull TextView tvReadingCount, @NonNull TextView tvReadingTime,
+      @NonNull TextView tvTimeHigh, @NonNull TextView tvTimeInRange, @NonNull TextView tvTimeLow,
+      @NonNull TextView tvTrend, @NonNull TextView tvUnit) {
     this.rootView = rootView;
     this.appBarLayout = appBarLayout;
     this.btnGoToSettings = btnGoToSettings;
@@ -120,6 +123,7 @@ public final class ActivityMainBinding implements ViewBinding {
     this.tvCurrentGlucose = tvCurrentGlucose;
     this.tvErrorMessage = tvErrorMessage;
     this.tvLastUpdated = tvLastUpdated;
+    this.tvNoCredsMessage = tvNoCredsMessage;
     this.tvRangeLabel = tvRangeLabel;
     this.tvReadingCount = tvReadingCount;
     this.tvReadingTime = tvReadingTime;
@@ -241,6 +245,12 @@ public final class ActivityMainBinding implements ViewBinding {
         break missingId;
       }
 
+      id = R.id.tvNoCredsMessage;
+      TextView tvNoCredsMessage = ViewBindings.findChildViewById(rootView, id);
+      if (tvNoCredsMessage == null) {
+        break missingId;
+      }
+
       id = R.id.tvRangeLabel;
       TextView tvRangeLabel = ViewBindings.findChildViewById(rootView, id);
       if (tvRangeLabel == null) {
@@ -292,8 +302,8 @@ public final class ActivityMainBinding implements ViewBinding {
       return new ActivityMainBinding((CoordinatorLayout) rootView, appBarLayout, btnGoToSettings,
           cardCurrent, cardStatus, errorCard, fabRefresh, glucoseChart, noCredentialsGroup,
           progressBar, toolbar, tvAvgGlucose, tvCurrentGlucose, tvErrorMessage, tvLastUpdated,
-          tvRangeLabel, tvReadingCount, tvReadingTime, tvTimeHigh, tvTimeInRange, tvTimeLow,
-          tvTrend, tvUnit);
+          tvNoCredsMessage, tvRangeLabel, tvReadingCount, tvReadingTime, tvTimeHigh, tvTimeInRange,
+          tvTimeLow, tvTrend, tvUnit);
     }
     String missingId = rootView.getResources().getResourceName(id);
     throw new NullPointerException("Missing required view with ID: ".concat(missingId));

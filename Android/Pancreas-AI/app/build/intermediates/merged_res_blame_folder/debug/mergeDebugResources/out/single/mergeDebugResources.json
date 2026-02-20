@@ -18,5 +18,9 @@
     {
         "merged": "com.pancreas.ai.app-debug-39:/drawable_ic_launcher.xml.flat",
         "source": "com.pancreas.ai.app-main-41:/drawable/ic_launcher.xml"
+    },
+    {
+        "merged": "com.pancreas.ai.app-debug-39:/layout_activity_oauth_webview.xml.flat",
+        "source": "com.pancreas.ai.app-main-41:/layout/activity_oauth_webview.xml"
     }
 ]

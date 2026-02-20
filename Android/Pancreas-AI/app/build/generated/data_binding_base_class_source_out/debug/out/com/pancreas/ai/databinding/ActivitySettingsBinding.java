@@ -5,9 +5,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
-import android.widget.ProgressBar;
-import android.widget.RadioButton;
-import android.widget.RadioGroup;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -17,6 +14,7 @@ import androidx.viewbinding.ViewBindings;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.slider.Slider;
+import com.google.android.material.switchmaterial.SwitchMaterial;
 import com.google.android.material.textfield.TextInputEditText;
 import com.pancreas.ai.R;
 import java.lang.NullPointerException;
@@ -28,74 +26,70 @@ public final class ActivitySettingsBinding implements ViewBinding {
   private final CoordinatorLayout rootView;
 
   @NonNull
-  public final MaterialButton btnClearSession;
+  public final MaterialButton btnConnect;
+
+  @NonNull
+  public final MaterialButton btnDiagnose;
+
+  @NonNull
+  public final MaterialButton btnDisconnect;
 
   @NonNull
   public final MaterialButton btnSave;
 
   @NonNull
-  public final MaterialButton btnTest;
+  public final ImageButton btnToggleSecret;
 
   @NonNull
-  public final ImageButton btnTogglePassword;
+  public final TextInputEditText etClientId;
 
   @NonNull
-  public final TextInputEditText etPassword;
-
-  @NonNull
-  public final TextInputEditText etUsername;
-
-  @NonNull
-  public final RadioButton rbOutsideUs;
-
-  @NonNull
-  public final RadioButton rbUs;
-
-  @NonNull
-  public final RadioGroup rgRegion;
+  public final TextInputEditText etClientSecret;
 
   @NonNull
   public final Slider sliderInterval;
 
   @NonNull
-  public final ProgressBar testProgressBar;
+  public final SwitchMaterial switchSandbox;
 
   @NonNull
   public final MaterialToolbar toolbar;
 
   @NonNull
-  public final TextView tvHelpLink;
+  public final TextView tvConnectionStatus;
+
+  @NonNull
+  public final TextView tvDevPortalLink;
+
+  @NonNull
+  public final TextView tvDiagnosticResult;
 
   @NonNull
   public final TextView tvIntervalValue;
 
-  @NonNull
-  public final TextView tvTestResult;
-
   private ActivitySettingsBinding(@NonNull CoordinatorLayout rootView,
-      @NonNull MaterialButton btnClearSession, @NonNull MaterialButton btnSave,
-      @NonNull MaterialButton btnTest, @NonNull ImageButton btnTogglePassword,
-      @NonNull TextInputEditText etPassword, @NonNull TextInputEditText etUsername,
-      @NonNull RadioButton rbOutsideUs, @NonNull RadioButton rbUs, @NonNull RadioGroup rgRegion,
-      @NonNull Slider sliderInterval, @NonNull ProgressBar testProgressBar,
-      @NonNull MaterialToolbar toolbar, @NonNull TextView tvHelpLink,
-      @NonNull TextView tvIntervalValue, @NonNull TextView tvTestResult) {
+      @NonNull MaterialButton btnConnect, @NonNull MaterialButton btnDiagnose,
+      @NonNull MaterialButton btnDisconnect, @NonNull MaterialButton btnSave,
+      @NonNull ImageButton btnToggleSecret, @NonNull TextInputEditText etClientId,
+      @NonNull TextInputEditText etClientSecret, @NonNull Slider sliderInterval,
+      @NonNull SwitchMaterial switchSandbox, @NonNull MaterialToolbar toolbar,
+      @NonNull TextView tvConnectionStatus, @NonNull TextView tvDevPortalLink,
+      @NonNull TextView tvDiagnosticResult, @NonNull TextView tvIntervalValue) {
     this.rootView = rootView;
-    this.btnClearSession = btnClearSession;
+    this.btnConnect = btnConnect;
+    this.btnDiagnose = btnDiagnose;
+    this.btnDisconnect = btnDisconnect;
     this.btnSave = btnSave;
-    this.btnTest = btnTest;
-    this.btnTogglePassword = btnTogglePassword;
-    this.etPassword = etPassword;
-    this.etUsername = etUsername;
-    this.rbOutsideUs = rbOutsideUs;
-    this.rbUs = rbUs;
-    this.rgRegion = rgRegion;
+    this.btnToggleSecret = btnToggleSecret;
+    this.etClientId = etClientId;
+    this.etClientSecret = etClientSecret;
     this.sliderInterval = sliderInterval;
-    this.testProgressBar = testProgressBar;
+    this.switchSandbox = switchSandbox;
     this.toolbar = toolbar;
-    this.tvHelpLink = tvHelpLink;
+    this.tvConnectionStatus = tvConnectionStatus;
+    this.tvDevPortalLink = tvDevPortalLink;
+    this.tvDiagnosticResult = tvDiagnosticResult;
     this.tvIntervalValue = tvIntervalValue;
-    this.tvTestResult = tvTestResult;
   }
 
   @Override
@@ -125,9 +119,21 @@ public final class ActivitySettingsBinding implements ViewBinding {
     // This is done to optimize the compiled bytecode for size and performance.
     int id;
     missingId: {
-      id = R.id.btnClearSession;
-      MaterialButton btnClearSession = ViewBindings.findChildViewById(rootView, id);
-      if (btnClearSession == null) {
+      id = R.id.btnConnect;
+      MaterialButton btnConnect = ViewBindings.findChildViewById(rootView, id);
+      if (btnConnect == null) {
+        break missingId;
+      }
+
+      id = R.id.btnDiagnose;
+      MaterialButton btnDiagnose = ViewBindings.findChildViewById(rootView, id);
+      if (btnDiagnose == null) {
+        break missingId;
+      }
+
+      id = R.id.btnDisconnect;
+      MaterialButton btnDisconnect = ViewBindings.findChildViewById(rootView, id);
+      if (btnDisconnect == null) {
         break missingId;
       }
 
@@ -137,45 +143,21 @@ public final class ActivitySettingsBinding implements ViewBinding {
         break missingId;
       }
 
-      id = R.id.btnTest;
-      MaterialButton btnTest = ViewBindings.findChildViewById(rootView, id);
-      if (btnTest == null) {
+      id = R.id.btnToggleSecret;
+      ImageButton btnToggleSecret = ViewBindings.findChildViewById(rootView, id);
+      if (btnToggleSecret == null) {
         break missingId;
       }
 
-      id = R.id.btnTogglePassword;
-      ImageButton btnTogglePassword = ViewBindings.findChildViewById(rootView, id);
-      if (btnTogglePassword == null) {
+      id = R.id.etClientId;
+      TextInputEditText etClientId = ViewBindings.findChildViewById(rootView, id);
+      if (etClientId == null) {
         break missingId;
       }
 
-      id = R.id.etPassword;
-      TextInputEditText etPassword = ViewBindings.findChildViewById(rootView, id);
-      if (etPassword == null) {
-        break missingId;
-      }
-
-      id = R.id.etUsername;
-      TextInputEditText etUsername = ViewBindings.findChildViewById(rootView, id);
-      if (etUsername == null) {
-        break missingId;
-      }
-
-      id = R.id.rbOutsideUs;
-      RadioButton rbOutsideUs = ViewBindings.findChildViewById(rootView, id);
-      if (rbOutsideUs == null) {
-        break missingId;
-      }
-
-      id = R.id.rbUs;
-      RadioButton rbUs = ViewBindings.findChildViewById(rootView, id);
-      if (rbUs == null) {
-        break missingId;
-      }
-
-      id = R.id.rgRegion;
-      RadioGroup rgRegion = ViewBindings.findChildViewById(rootView, id);
-      if (rgRegion == null) {
+      id = R.id.etClientSecret;
+      TextInputEditText etClientSecret = ViewBindings.findChildViewById(rootView, id);
+      if (etClientSecret == null) {
         break missingId;
       }
 
@@ -185,9 +167,9 @@ public final class ActivitySettingsBinding implements ViewBinding {
         break missingId;
       }
 
-      id = R.id.testProgressBar;
-      ProgressBar testProgressBar = ViewBindings.findChildViewById(rootView, id);
-      if (testProgressBar == null) {
+      id = R.id.switchSandbox;
+      SwitchMaterial switchSandbox = ViewBindings.findChildViewById(rootView, id);
+      if (switchSandbox == null) {
         break missingId;
       }
 
@@ -197,9 +179,21 @@ public final class ActivitySettingsBinding implements ViewBinding {
         break missingId;
       }
 
-      id = R.id.tvHelpLink;
-      TextView tvHelpLink = ViewBindings.findChildViewById(rootView, id);
-      if (tvHelpLink == null) {
+      id = R.id.tvConnectionStatus;
+      TextView tvConnectionStatus = ViewBindings.findChildViewById(rootView, id);
+      if (tvConnectionStatus == null) {
+        break missingId;
+      }
+
+      id = R.id.tvDevPortalLink;
+      TextView tvDevPortalLink = ViewBindings.findChildViewById(rootView, id);
+      if (tvDevPortalLink == null) {
+        break missingId;
+      }
+
+      id = R.id.tvDiagnosticResult;
+      TextView tvDiagnosticResult = ViewBindings.findChildViewById(rootView, id);
+      if (tvDiagnosticResult == null) {
         break missingId;
       }
 
@@ -209,15 +203,10 @@ public final class ActivitySettingsBinding implements ViewBinding {
         break missingId;
       }
 
-      id = R.id.tvTestResult;
-      TextView tvTestResult = ViewBindings.findChildViewById(rootView, id);
-      if (tvTestResult == null) {
-        break missingId;
-      }
-
-      return new ActivitySettingsBinding((CoordinatorLayout) rootView, btnClearSession, btnSave,
-          btnTest, btnTogglePassword, etPassword, etUsername, rbOutsideUs, rbUs, rgRegion,
-          sliderInterval, testProgressBar, toolbar, tvHelpLink, tvIntervalValue, tvTestResult);
+      return new ActivitySettingsBinding((CoordinatorLayout) rootView, btnConnect, btnDiagnose,
+          btnDisconnect, btnSave, btnToggleSecret, etClientId, etClientSecret, sliderInterval,
+          switchSandbox, toolbar, tvConnectionStatus, tvDevPortalLink, tvDiagnosticResult,
+          tvIntervalValue);
     }
     String missingId = rootView.getResources().getResourceName(id);
     throw new NullPointerException("Missing required view with ID: ".concat(missingId));

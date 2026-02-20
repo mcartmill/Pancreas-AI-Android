@@ -87,9 +87,10 @@
                     android:layout_marginBottom="8dp" />
 
                 <TextView
+                    android:id="@+id/tvNoCredsMessage"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Enter your Dexcom Share credentials to view live glucose data"
+                    android:text="Enter your Dexcom Developer credentials in Settings, then tap Connect with Dexcom."
                     android:textColor="@color/text_secondary"
                     android:textSize="14sp"
                     android:gravity="center"
@@ -99,7 +100,7 @@
                     android:id="@+id/btnGoToSettings"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Open Settings"
+                    android:text="Go to Settings →"
                     app:backgroundTint="@color/dexcom_cyan"
                     android:textColor="@color/bg_primary" />
 

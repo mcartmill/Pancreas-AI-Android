@@ -15,54 +15,56 @@ import kotlinx.coroutines.launch
 class SettingsActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivitySettingsBinding
-    private var passwordVisible = false
+    private var secretVisible = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivitySettingsBinding.inflate(layoutInflater)
         setContentView(binding.root)
-
         setSupportActionBar(binding.toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         supportActionBar?.title = "Settings"
-
         loadSavedSettings()
-        setupClickListeners()
+        setupListeners()
+        updateConnectionStatus()
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        if (item.itemId == android.R.id.home) {
-            onBackPressedDispatcher.onBackPressed()
-            return true
-        }
+        if (item.itemId == android.R.id.home) { onBackPressedDispatcher.onBackPressed(); return true }
         return super.onOptionsItemSelected(item)
     }
 
-    private fun loadSavedSettings() {
-        binding.etUsername.setText(CredentialsManager.getUsername(this))
-        if (CredentialsManager.getPassword(this).isNotBlank()) {
-            binding.etPassword.hint = "••••••••  (saved)"
-        }
-        val region = CredentialsManager.getRegion(this)
-        if (region == "US") binding.rbUs.isChecked = true else binding.rbOutsideUs.isChecked = true
+    override fun onResume() { super.onResume(); updateConnectionStatus() }
 
+    private fun loadSavedSettings() {
+        binding.etClientId.setText(CredentialsManager.getClientId(this))
+        if (CredentialsManager.getClientSecret(this).isNotBlank())
+            binding.etClientSecret.hint = "••••••••  (saved)"
+        binding.switchSandbox.isChecked = CredentialsManager.useSandbox(this)
         val interval = CredentialsManager.getRefreshInterval(this)
         binding.sliderInterval.value = interval.toFloat()
         binding.tvIntervalValue.text = "$interval min"
     }
 
-    private fun setupClickListeners() {
-        binding.btnTogglePassword.setOnClickListener {
-            passwordVisible = !passwordVisible
-            if (passwordVisible) {
-                binding.etPassword.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
-                binding.btnTogglePassword.setImageResource(android.R.drawable.ic_menu_close_clear_cancel)
-            } else {
-                binding.etPassword.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
-                binding.btnTogglePassword.setImageResource(android.R.drawable.ic_menu_view)
-            }
-            binding.etPassword.setSelection(binding.etPassword.text?.length ?: 0)
+    private fun setupListeners() {
+        binding.btnToggleSecret.setOnClickListener {
+            secretVisible = !secretVisible
+            binding.etClientSecret.inputType = if (secretVisible)
+                InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
+            else InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
+            binding.etClientSecret.setSelection(binding.etClientSecret.text?.length ?: 0)
         }
+
+        binding.btnSave.setOnClickListener { saveCredentials() }
+        binding.btnConnect.setOnClickListener { launchOAuth() }
+
+        binding.btnDisconnect.setOnClickListener {
+            CredentialsManager.clearTokens(this)
+            updateConnectionStatus()
+            showToast("Disconnected from Dexcom")
+        }
+
+        binding.btnDiagnose.setOnClickListener { runDiagnostics() }
 
         binding.sliderInterval.addOnChangeListener { _, value, _ ->
             val mins = value.toInt()
@@ -70,94 +72,88 @@ class SettingsActivity : AppCompatActivity() {
             CredentialsManager.setRefreshInterval(this, mins)
         }
 
-        binding.btnSave.setOnClickListener { saveCredentials() }
-        binding.btnTest.setOnClickListener { testConnection() }
-
-        binding.btnClearSession.setOnClickListener {
-            CredentialsManager.clearSession(this)
-            showToast("Session cleared. Next data fetch will re-authenticate.")
+        binding.switchSandbox.setOnCheckedChangeListener { _, checked ->
+            if (CredentialsManager.hasClientCredentials(this)) {
+                CredentialsManager.saveClientCredentials(
+                    this,
+                    CredentialsManager.getClientId(this),
+                    CredentialsManager.getClientSecret(this),
+                    checked
+                )
+            }
+            updateConnectionStatus()
         }
 
-        binding.tvHelpLink.setOnClickListener {
-            val intent = Intent(Intent.ACTION_VIEW,
-                Uri.parse("https://www.dexcom.com/faqs/how-do-i-set-dexcom-share"))
-            startActivity(intent)
+        binding.tvDevPortalLink.setOnClickListener {
+            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://developer.dexcom.com/")))
         }
     }
 
     private fun saveCredentials() {
-        val username = binding.etUsername.text?.toString()?.trim() ?: ""
-        val password = binding.etPassword.text?.toString() ?: ""
-        val region = if (binding.rbUs.isChecked) "US" else "OUTSIDE"
+        val clientId     = binding.etClientId.text?.toString()?.trim() ?: ""
+        val clientSecret = binding.etClientSecret.text?.toString() ?: ""
+        val sandbox      = binding.switchSandbox.isChecked
 
-        if (username.isBlank()) { binding.etUsername.error = "Username is required"; return }
+        if (clientId.isBlank()) { binding.etClientId.error = "Client ID is required"; return }
+        val finalSecret = if (clientSecret.isBlank()) CredentialsManager.getClientSecret(this) else clientSecret
+        if (finalSecret.isBlank()) { binding.etClientSecret.error = "Client Secret is required"; return }
 
-        val finalPassword = if (password.isBlank()) CredentialsManager.getPassword(this) else password
-        if (finalPassword.isBlank()) { binding.etPassword.error = "Password is required"; return }
-
-        CredentialsManager.saveCredentials(this, username, finalPassword, region)
+        CredentialsManager.saveClientCredentials(this, clientId, finalSecret, sandbox)
+        binding.etClientSecret.setText("")
+        binding.etClientSecret.hint = "••••••••  (saved)"
         showToast("Credentials saved ✓")
-        binding.etPassword.setText("")
-        binding.etPassword.hint = "••••••••  (saved)"
+        updateConnectionStatus()
     }
 
-    private fun testConnection() {
-        val username = binding.etUsername.text?.toString()?.trim() ?: ""
-        val password = binding.etPassword.text?.toString() ?: ""
-        val region = if (binding.rbUs.isChecked) "US" else "OUTSIDE"
-
-        if (username.isBlank() || password.isBlank()) {
-            showToast("Enter credentials first")
+    private fun launchOAuth() {
+        if (!CredentialsManager.hasClientCredentials(this)) {
+            showToast("Save your Client ID and Secret first")
             return
         }
+        startActivity(Intent(this, OAuthWebViewActivity::class.java))
+    }
 
-        CredentialsManager.saveCredentials(this, username, password, region)
-        binding.btnTest.isEnabled = false
-        binding.testProgressBar.visibility = View.VISIBLE
-        binding.tvTestResult.visibility = View.GONE
+    private fun runDiagnostics() {
+        if (!CredentialsManager.isConnected(this)) {
+            showToast("Connect to Dexcom first")
+            return
+        }
+        binding.btnDiagnose.isEnabled = false
+        binding.tvDiagnosticResult.text = "Running diagnostics…"
+        binding.tvDiagnosticResult.visibility = View.VISIBLE
 
         lifecycleScope.launch {
             try {
-                val repo = GlucoseRepository(applicationContext)
-                repo.login()
-
-                // Pull full 24 h so we get readings regardless of how long the sensor has been active
-                val readings = repo.fetchReadings(minutes = 1440, maxCount = 288)
-
-                binding.testProgressBar.visibility = View.GONE
-                binding.btnTest.isEnabled = true
-
-                if (readings.isNotEmpty()) {
-                    val latest = readings.last()
-                    val count  = readings.size
-                    val oldest = java.text.SimpleDateFormat("MMM d h:mm a", java.util.Locale.getDefault())
-                        .format(java.util.Date(readings.first().epochMillis()))
-                    binding.tvTestResult.text =
-                        "✓ Connected!  $count readings found\n" +
-                        "Latest: ${latest.value} mg/dL ${latest.trendArrow()}\n" +
-                        "History back to: $oldest"
-                    binding.tvTestResult.setTextColor(getColor(android.R.color.holo_green_light))
-                } else {
-                    // Connected but no data — almost always means Share isn't enabled
-                    binding.tvTestResult.text =
-                        "⚠ Login succeeded but no readings returned.\n\n" +
-                        "To fix this, open the Dexcom app and:\n" +
-                        "  1. Tap Menu → Share\n" +
-                        "  2. Turn the Share toggle ON\n" +
-                        "  3. Tap 'Invite Follower' and send\n" +
-                        "     an invite (any email, even your own)\n\n" +
-                        "Once sharing is active, tap Test again."
-                    binding.tvTestResult.setTextColor(getColor(android.R.color.holo_orange_light))
-                }
-                binding.tvTestResult.visibility = View.VISIBLE
-
+                val result = GlucoseRepository(applicationContext).getDiagnostics()
+                binding.tvDiagnosticResult.text = result
             } catch (e: Exception) {
-                binding.testProgressBar.visibility = View.GONE
-                binding.btnTest.isEnabled = true
-                binding.tvTestResult.text = "✗ ${e.message}"
-                binding.tvTestResult.setTextColor(getColor(android.R.color.holo_red_light))
-                binding.tvTestResult.visibility = View.VISIBLE
+                binding.tvDiagnosticResult.text = "Error: ${e.message}"
             }
+            binding.btnDiagnose.isEnabled = true
+        }
+    }
+
+    private fun updateConnectionStatus() {
+        val connected = CredentialsManager.isConnected(this)
+        val hasCreds  = CredentialsManager.hasClientCredentials(this)
+        val sandbox   = CredentialsManager.useSandbox(this)
+
+        if (connected) {
+            binding.tvConnectionStatus.text =
+                "● Connected${if (sandbox) " (Sandbox)" else " (Production)"}"
+            binding.tvConnectionStatus.setTextColor(getColor(android.R.color.holo_green_light))
+            binding.btnConnect.text = "Re-connect with Dexcom"
+            binding.btnDisconnect.visibility = View.VISIBLE
+            binding.btnDiagnose.visibility   = View.VISIBLE
+        } else {
+            binding.tvConnectionStatus.text =
+                if (hasCreds) "○ Not connected — tap Connect below"
+                else "○ Enter credentials then connect"
+            binding.tvConnectionStatus.setTextColor(getColor(android.R.color.holo_orange_light))
+            binding.btnConnect.text = "Connect with Dexcom"
+            binding.btnDisconnect.visibility = View.GONE
+            binding.btnDiagnose.visibility   = View.GONE
+            binding.tvDiagnosticResult.visibility = View.GONE
         }
     }
 

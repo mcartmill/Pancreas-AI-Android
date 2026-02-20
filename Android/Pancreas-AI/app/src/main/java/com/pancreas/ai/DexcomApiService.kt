@@ -9,92 +9,128 @@ import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import java.util.concurrent.TimeUnit
 
-// ─── Data Models ─────────────────────────────────────────────────────────────
+const val DEXCOM_BASE_PROD    = "https://api.dexcom.com/"
+const val DEXCOM_BASE_SANDBOX = "https://sandbox-api.dexcom.com/"
+const val REDIRECT_URI        = "https://localhost/callback"
+const val OAUTH_SCOPE         = "offline_access"
 
-data class LoginRequest(
-    @SerializedName("accountName") val accountName: String,
-    @SerializedName("password") val password: String,
-    @SerializedName("applicationId") val applicationId: String = DEXCOM_APP_ID
+data class TokenResponse(
+    @SerializedName("access_token")  val accessToken: String,
+    @SerializedName("refresh_token") val refreshToken: String,
+    @SerializedName("expires_in")    val expiresIn: Int,
+    @SerializedName("token_type")    val tokenType: String
 )
 
-data class GlucoseReading(
-    @SerializedName("WT") val wt: String,         // Wall time e.g. "Date(1700000000000)"
-    @SerializedName("ST") val st: String,          // System time
-    @SerializedName("DT") val dt: String,          // Display time
-    @SerializedName("Value") val value: Int,        // mg/dL
-    @SerializedName("Trend") val trend: String      // e.g. "Flat", "FortyFiveUp", "SingleUp"
-) {
-    /** Extract epoch millis from the Dexcom /Date(...)/ format */
-    fun epochMillis(): Long {
-        val raw = wt.removePrefix("Date(").removeSuffix(")")
-        return raw.toLongOrNull() ?: 0L
-    }
+data class EgvsResponse(
+    @SerializedName("egvs") val egvs: List<EgvReading>?,
+    @SerializedName("unit") val unit: String?
+)
 
-    fun trendArrow(): String = when (trend) {
-        "DoubleUp"         -> "↑↑"
-        "SingleUp"         -> "↑"
-        "FortyFiveUp"      -> "↗"
-        "Flat"             -> "→"
-        "FortyFiveDown"    -> "↘"
-        "SingleDown"       -> "↓"
-        "DoubleDown"       -> "↓↓"
-        "NotComputable"    -> "?"
-        "RateOutOfRange"   -> "⚠"
-        else               -> "–"
+data class DataRangeResponse(
+    @SerializedName("egvs") val egvs: DataRangeItem?
+)
+
+data class DataRangeItem(
+    @SerializedName("start") val start: TimeRecord?,
+    @SerializedName("end")   val end: TimeRecord?
+)
+
+data class TimeRecord(
+    @SerializedName("systemTime")  val systemTime: String,
+    @SerializedName("displayTime") val displayTime: String
+)
+
+data class EgvReading(
+    @SerializedName("systemTime")    val systemTime: String,
+    @SerializedName("displayTime")   val displayTime: String,
+    @SerializedName("value")         val value: Int?,
+    @SerializedName("realtimeValue") val realtimeValue: Int?,
+    @SerializedName("status")        val status: String?,
+    @SerializedName("trend")         val trend: String,
+    @SerializedName("trendRate")     val trendRate: Double?
+) {
+    fun epochMillis(): Long = try {
+        // Handle both "2024-01-01T12:00:00" and "2024-01-01T12:00:00+00:00"
+        val s = systemTime.replace(Regex("[+-]\\d{2}:\\d{2}$"), "").replace("Z", "")
+        val fmt = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", java.util.Locale.US)
+        fmt.timeZone = java.util.TimeZone.getTimeZone("UTC")
+        fmt.parse(s)?.time ?: 0L
+    } catch (e: Exception) { 0L }
+
+    fun glucoseValue(): Int = value ?: realtimeValue ?: 0
+
+    fun trendArrow(): String = when (trend.lowercase()) {
+        "doubleup"       -> "↑↑"
+        "singleup"       -> "↑"
+        "fortyfiveup"    -> "↗"
+        "flat"           -> "→"
+        "fortyfivedown"  -> "↘"
+        "singledown"     -> "↓"
+        "doubledown"     -> "↓↓"
+        "notcomputable"  -> "?"
+        "rateoutofrange" -> "⚠"
+        else             -> "–"
     }
 
     fun glucoseColor(): Int {
+        val v = glucoseValue()
         return when {
-            value < 70  -> android.graphics.Color.parseColor("#FF4444")   // Low  – red
-            value < 80  -> android.graphics.Color.parseColor("#FF8800")   // Near-low – orange
-            value <= 180 -> android.graphics.Color.parseColor("#00E676")  // In range – green
-            value <= 250 -> android.graphics.Color.parseColor("#FF8800")  // High – orange
-            else         -> android.graphics.Color.parseColor("#FF4444")  // Very high – red
+            v < 70   -> android.graphics.Color.parseColor("#FF4444")
+            v < 80   -> android.graphics.Color.parseColor("#FF8800")
+            v <= 180 -> android.graphics.Color.parseColor("#00E676")
+            v <= 250 -> android.graphics.Color.parseColor("#FF8800")
+            else     -> android.graphics.Color.parseColor("#FF4444")
         }
     }
 }
 
-// ─── Retrofit Interface ───────────────────────────────────────────────────────
-
 interface DexcomApiService {
 
-    /** Returns a session ID (quoted string) */
-    @Headers("Content-Type: application/json", "Accept: application/json")
-    @POST("ShareWebServices/Services/General/LoginPublisherAccountByName")
-    suspend fun login(@Body request: LoginRequest): Response<String>
+    // Token exchange — v2 endpoint (correct per Dexcom docs)
+    @FormUrlEncoded
+    @POST("v2/oauth2/token")
+    suspend fun getToken(
+        @Field("client_id")     clientId: String,
+        @Field("client_secret") clientSecret: String,
+        @Field("code")          code: String,
+        @Field("grant_type")    grantType: String = "authorization_code",
+        @Field("redirect_uri")  redirectUri: String = REDIRECT_URI
+    ): Response<TokenResponse>
 
-    /**
-     * Fetch latest glucose readings.
-     * @param minutes  how many minutes of history (max 1440 = 24 h)
-     * @param maxCount max number of readings (288 ≈ 24 h at 5-min intervals)
-     */
-    @GET("ShareWebServices/Services/Publisher/ReadPublisherLatestGlucoseValues")
-    suspend fun getGlucoseReadings(
-        @Query("sessionId") sessionId: String,
-        @Query("minutes")   minutes: Int = 1440,
-        @Query("maxCount")  maxCount: Int = 288
-    ): Response<List<GlucoseReading>>
+    @FormUrlEncoded
+    @POST("v2/oauth2/token")
+    suspend fun refreshToken(
+        @Field("client_id")     clientId: String,
+        @Field("client_secret") clientSecret: String,
+        @Field("refresh_token") refreshToken: String,
+        @Field("grant_type")    grantType: String = "refresh_token",
+        @Field("redirect_uri")  redirectUri: String = REDIRECT_URI
+    ): Response<TokenResponse>
+
+    // EGV readings — v3 endpoint
+    @GET("v3/users/self/egvs")
+    suspend fun getEgvs(
+        @Header("Authorization") bearerToken: String,
+        @Query("startDate")      startDate: String,
+        @Query("endDate")        endDate: String
+    ): Response<EgvsResponse>
+
+    // DataRange — tells us the earliest/latest data available for this user
+    @GET("v3/users/self/dataRange")
+    suspend fun getDataRange(
+        @Header("Authorization") bearerToken: String
+    ): Response<DataRangeResponse>
 }
 
-// ─── Constants ────────────────────────────────────────────────────────────────
-
-const val DEXCOM_APP_ID       = "d89443d2-327c-4a6f-89e5-496bbb0317db"
-const val DEXCOM_BASE_US      = "https://share2.dexcom.com/"
-const val DEXCOM_BASE_OUTSIDE = "https://shareous1.dexcom.com/"
-
-// ─── Factory ─────────────────────────────────────────────────────────────────
-
 object DexcomRetrofit {
-    fun create(baseUrl: String): DexcomApiService {
-        val logging = HttpLoggingInterceptor().apply {
-            level = HttpLoggingInterceptor.Level.BODY
-        }
+    fun create(useSandbox: Boolean = false): DexcomApiService {
+        val baseUrl = if (useSandbox) DEXCOM_BASE_SANDBOX else DEXCOM_BASE_PROD
+        val logging = HttpLoggingInterceptor().apply { level = HttpLoggingInterceptor.Level.BODY }
         val client = OkHttpClient.Builder()
             .addInterceptor(logging)
-            .connectTimeout(15, TimeUnit.SECONDS)
-            .readTimeout(15, TimeUnit.SECONDS)
+            .connectTimeout(20, TimeUnit.SECONDS)
+            .readTimeout(20, TimeUnit.SECONDS)
             .build()
-
         return Retrofit.Builder()
             .baseUrl(baseUrl)
             .client(client)

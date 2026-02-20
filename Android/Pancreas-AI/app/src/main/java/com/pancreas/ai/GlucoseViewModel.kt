@@ -11,9 +11,10 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 sealed class UiState {
-    object Loading : UiState()
+    object Loading       : UiState()
     object NoCredentials : UiState()
-    data class Success(val readings: List<GlucoseReading>) : UiState()
+    object NotConnected  : UiState()   // has client creds but no OAuth tokens yet
+    data class Success(val readings: List<EgvReading>) : UiState()
     data class Error(val message: String) : UiState()
 }
 
@@ -36,30 +37,30 @@ class GlucoseViewModel(app: Application) : AndroidViewModel(app) {
             while (true) {
                 loadReadings()
                 val intervalMs = CredentialsManager.getRefreshInterval(getApplication()) * 60_000L
-                Log.d(TAG, "Next refresh in ${intervalMs / 60_000} min")
                 delay(intervalMs)
             }
         }
     }
 
-    fun stopAutoRefresh() {
-        refreshJob?.cancel()
-        refreshJob = null
-    }
+    fun stopAutoRefresh() { refreshJob?.cancel(); refreshJob = null }
 
-    fun refresh() {
-        viewModelScope.launch { loadReadings() }
-    }
+    fun refresh() { viewModelScope.launch { loadReadings() } }
 
     private suspend fun loadReadings() {
         val ctx = getApplication<Application>()
-        if (!CredentialsManager.hasCredentials(ctx)) {
+
+        if (!CredentialsManager.hasClientCredentials(ctx)) {
             _uiState.postValue(UiState.NoCredentials)
             return
         }
+        if (!CredentialsManager.isConnected(ctx)) {
+            _uiState.postValue(UiState.NotConnected)
+            return
+        }
+
         _uiState.postValue(UiState.Loading)
         try {
-            val readings = repository.fetchReadings()
+            val readings = repository.fetchReadings(hours = 24)
             _uiState.postValue(UiState.Success(readings))
             _lastUpdated.postValue(System.currentTimeMillis())
         } catch (e: Exception) {
@@ -68,8 +69,5 @@ class GlucoseViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    override fun onCleared() {
-        super.onCleared()
-        stopAutoRefresh()
-    }
+    override fun onCleared() { super.onCleared(); stopAutoRefresh() }
 }

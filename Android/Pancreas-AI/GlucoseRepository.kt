@@ -2,87 +2,116 @@ package com.pancreas.ai
 
 import android.content.Context
 import android.util.Log
+import java.text.SimpleDateFormat
+import java.util.*
 
 class GlucoseRepository(private val ctx: Context) {
 
     private val TAG = "GlucoseRepository"
-
-    private fun api(): DexcomApiService =
-        DexcomRetrofit.create(CredentialsManager.getBaseUrl(ctx))
-
-    /** Returns a valid session ID, re-authenticating if needed. */
-    private suspend fun getValidSession(): String {
-        val cached = CredentialsManager.getSessionId(ctx)
-        if (cached != null) return cached
-        return login()
+    // No Z suffix — Dexcom docs show plain ISO 8601 local datetime
+    private val isoFmt = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US).apply {
+        timeZone = TimeZone.getTimeZone("UTC")
     }
 
-    /** Authenticate and store session. Throws on failure. */
-    suspend fun login(): String {
-        val username = CredentialsManager.getUsername(ctx)
-        val password = CredentialsManager.getPassword(ctx)
+    private fun api() = DexcomRetrofit.create(CredentialsManager.useSandbox(ctx))
 
-        if (username.isBlank() || password.isBlank()) {
-            throw IllegalStateException("Credentials not configured. Please open Settings.")
+    suspend fun exchangeAuthCode(code: String) {
+        val resp = api().getToken(
+            clientId     = CredentialsManager.getClientId(ctx),
+            clientSecret = CredentialsManager.getClientSecret(ctx),
+            code         = code
+        )
+        if (!resp.isSuccessful) {
+            val err = resp.errorBody()?.string() ?: "HTTP ${resp.code()}"
+            throw Exception("Token exchange failed: $err")
         }
+        val body = resp.body() ?: throw Exception("Empty token response")
+        CredentialsManager.saveTokens(ctx, body.accessToken, body.refreshToken, body.expiresIn)
+    }
 
-        val response = api().login(LoginRequest(username, password))
-
-        if (!response.isSuccessful) {
-            val error = response.errorBody()?.string() ?: "Unknown error"
-            Log.e(TAG, "Login failed: ${response.code()} $error")
-            throw Exception("Login failed (${response.code()}): Check your username and password.")
+    suspend fun getValidAccessToken(): String {
+        if (CredentialsManager.isAccessTokenValid(ctx)) {
+            return CredentialsManager.getAccessToken(ctx)!!
         }
+        val refreshToken = CredentialsManager.getRefreshToken(ctx)
+            ?: throw Exception("Not connected. Tap 'Connect with Dexcom' in Settings.")
 
-        // Dexcom returns the session ID as a quoted JSON string, strip quotes
-        val sessionId = response.body()?.trim('"')
-            ?: throw Exception("Empty session ID returned by Dexcom.")
-
-        if (sessionId == "00000000-0000-0000-0000-000000000000") {
-            throw Exception("Invalid credentials — Dexcom rejected your username or password.")
+        val resp = api().refreshToken(
+            clientId     = CredentialsManager.getClientId(ctx),
+            clientSecret = CredentialsManager.getClientSecret(ctx),
+            refreshToken = refreshToken
+        )
+        if (!resp.isSuccessful) {
+            CredentialsManager.clearTokens(ctx)
+            throw Exception("Session expired. Please reconnect in Settings.")
         }
-
-        CredentialsManager.saveSessionId(ctx, sessionId)
-        Log.d(TAG, "Login successful, session: $sessionId")
-        return sessionId
+        val body = resp.body() ?: throw Exception("Empty refresh response")
+        CredentialsManager.saveTokens(ctx, body.accessToken, body.refreshToken, body.expiresIn)
+        return body.accessToken
     }
 
     /**
-     * Fetch glucose readings, automatically retrying once if the session is stale.
+     * Returns a human-readable diagnostic string describing what data the API
+     * says is available for this account. Useful for troubleshooting empty results.
      */
-    suspend fun fetchReadings(
-        minutes: Int = 1440,
-        maxCount: Int = 288
-    ): List<GlucoseReading> {
-        return try {
-            fetchWithSession(getValidSession(), minutes, maxCount)
-        } catch (e: SessionExpiredException) {
-            Log.w(TAG, "Session expired, re-authenticating…")
-            CredentialsManager.clearSession(ctx)
-            fetchWithSession(login(), minutes, maxCount)
+    suspend fun getDiagnostics(): String {
+        val token = getValidAccessToken()
+        val resp = api().getDataRange(bearerToken = "Bearer $token")
+        if (!resp.isSuccessful) {
+            val err = resp.errorBody()?.string() ?: "HTTP ${resp.code()}"
+            return "dataRange error: $err"
+        }
+        val egvs = resp.body()?.egvs
+        return if (egvs?.start != null && egvs.end != null) {
+            "Data available from ${egvs.start.systemTime} to ${egvs.end.systemTime}"
+        } else {
+            "dataRange returned no EGV records (egvs is null or empty)"
         }
     }
 
-    private suspend fun fetchWithSession(
-        sessionId: String,
-        minutes: Int,
-        maxCount: Int
-    ): List<GlucoseReading> {
-        val response = api().getGlucoseReadings(sessionId, minutes, maxCount)
+    suspend fun fetchReadings(hours: Int = 24): List<EgvReading> {
+        if (!CredentialsManager.hasClientCredentials(ctx))
+            throw Exception("No client credentials. Enter Client ID and Secret in Settings.")
 
-        if (response.code() == 500) {
-            // Dexcom uses 500 for expired / invalid sessions
-            throw SessionExpiredException()
+        val token = getValidAccessToken()
+
+        // First check dataRange so we can log what's actually available
+        try {
+            val rangeResp = api().getDataRange(bearerToken = "Bearer $token")
+            if (rangeResp.isSuccessful) {
+                val egvRange = rangeResp.body()?.egvs
+                Log.d(TAG, "dataRange → EGVs: ${egvRange?.start?.systemTime} – ${egvRange?.end?.systemTime}")
+            } else {
+                Log.w(TAG, "dataRange failed: ${rangeResp.code()} ${rangeResp.errorBody()?.string()}")
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "dataRange exception: ${e.message}")
         }
 
-        if (!response.isSuccessful) {
-            throw Exception("Failed to fetch readings: HTTP ${response.code()}")
+        val endDate   = Date()
+        val startDate = Date(endDate.time - hours * 3_600_000L)
+        val start = isoFmt.format(startDate)
+        val end   = isoFmt.format(endDate)
+        Log.d(TAG, "Fetching EGVs: $start → $end (sandbox=${CredentialsManager.useSandbox(ctx)})")
+
+        val resp = api().getEgvs(
+            bearerToken = "Bearer $token",
+            startDate   = start,
+            endDate     = end
+        )
+
+        if (!resp.isSuccessful) {
+            val errBody = resp.errorBody()?.string() ?: "no body"
+            Log.e(TAG, "EGV error ${resp.code()}: $errBody")
+            if (resp.code() == 401) {
+                CredentialsManager.clearTokens(ctx)
+                throw Exception("Authorization failed (401). Please reconnect in Settings.")
+            }
+            throw Exception("API error ${resp.code()}: $errBody")
         }
 
-        val readings = response.body() ?: emptyList()
-        Log.d(TAG, "Fetched ${readings.size} readings")
-        return readings.sortedBy { it.epochMillis() }
+        val readings = resp.body()?.egvs ?: emptyList()
+        Log.d(TAG, "Received ${readings.size} EGV readings")
+        return readings.filter { it.glucoseValue() > 0 }.sortedBy { it.epochMillis() }
     }
-
-    private class SessionExpiredException : Exception("Dexcom session expired")
 }
