@@ -25,6 +25,7 @@ class MainActivity : AppCompatActivity() {
     private val viewModel: GlucoseViewModel by viewModels()
 
     private val timeFmt    = SimpleDateFormat("h:mm a", Locale.getDefault())
+    private var chartBaseMs = 0L   // baseline for chart X offset (see updateChart)
     private val updatedFmt = SimpleDateFormat("h:mm:ss a", Locale.getDefault())
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -35,6 +36,7 @@ class MainActivity : AppCompatActivity() {
 
         setupChart()
         observeViewModel()
+        setupRangeButtons()
         handleOAuthResult(intent)
 
         binding.fabRefresh.setOnClickListener { viewModel.refresh() }
@@ -69,7 +71,6 @@ class MainActivity : AppCompatActivity() {
         } else if (message.isNotBlank()) {
             Toast.makeText(this, "⚠ $message", Toast.LENGTH_LONG).show()
         }
-        // Clear the extras so rotation doesn't re-show the toast
         intent.removeExtra("oauth_success")
         intent.removeExtra("oauth_message")
     }
@@ -82,7 +83,37 @@ class MainActivity : AppCompatActivity() {
     override fun onOptionsItemSelected(item: MenuItem) = when (item.itemId) {
         R.id.action_settings -> { startActivity(Intent(this, SettingsActivity::class.java)); true }
         R.id.action_refresh  -> { viewModel.refresh(); true }
-        else -> super.onOptionsItemSelected(item)
+        else                 -> super.onOptionsItemSelected(item)
+    }
+
+    // ─── Time Range ───────────────────────────────────────────────────────────
+
+    private val rangeButtons by lazy {
+        listOf(binding.btn1h, binding.btn3h, binding.btn6h, binding.btn12h, binding.btn24h)
+    }
+    private val rangeHours = listOf(1, 3, 6, 12, 24)
+
+    private fun setupRangeButtons() {
+        val currentHours = CredentialsManager.getChartHours(this)
+        updateRangeButtonSelection(currentHours)
+
+        rangeButtons.forEachIndexed { i, btn ->
+            btn.setOnClickListener {
+                val hours = rangeHours[i]
+                viewModel.setChartHours(hours)
+                updateRangeButtonSelection(hours)
+            }
+        }
+    }
+
+    private fun updateRangeButtonSelection(selectedHours: Int) {
+        rangeButtons.forEachIndexed { i, btn ->
+            val selected = rangeHours[i] == selectedHours
+            btn.setTextColor(if (selected) Color.parseColor("#00BCD4") else Color.parseColor("#546E7A"))
+            btn.setBackgroundColor(
+                if (selected) Color.parseColor("#1A3A4A") else Color.TRANSPARENT
+            )
+        }
     }
 
     // ─── Chart ───────────────────────────────────────────────────────────────
@@ -101,7 +132,7 @@ class MainActivity : AppCompatActivity() {
                 granularity = 1f
                 valueFormatter = object : ValueFormatter() {
                     override fun getFormattedValue(value: Float) =
-                        timeFmt.format(Date(value.toLong()))
+                        timeFmt.format(Date(chartBaseMs + value.toLong()))
                 }
                 labelRotationAngle = -45f
                 setLabelCount(6, true)
@@ -150,41 +181,49 @@ class MainActivity : AppCompatActivity() {
     // ─── UI States ────────────────────────────────────────────────────────────
 
     private fun showLoading() {
-        binding.progressBar.visibility    = View.VISIBLE
-        binding.cardCurrent.visibility    = View.GONE
-        binding.cardStatus.visibility     = View.GONE
+        binding.progressBar.visibility        = View.VISIBLE
+        binding.cardCurrent.visibility        = View.GONE
+        binding.cardStatus.visibility         = View.GONE
+        binding.rangeBar.visibility           = View.GONE
         binding.noCredentialsGroup.visibility = View.GONE
-        binding.errorCard.visibility      = View.GONE
+        binding.errorCard.visibility          = View.GONE
     }
 
     private fun showNoCredentials() {
-        binding.progressBar.visibility    = View.GONE
-        binding.cardCurrent.visibility    = View.GONE
-        binding.cardStatus.visibility     = View.GONE
+        binding.progressBar.visibility        = View.GONE
+        binding.cardCurrent.visibility        = View.GONE
+        binding.cardStatus.visibility         = View.GONE
+        binding.rangeBar.visibility           = View.GONE
         binding.noCredentialsGroup.visibility = View.VISIBLE
-        binding.tvNoCredsMessage.text     = "Enter your Dexcom Developer Client ID and Secret in Settings to get started."
-        binding.errorCard.visibility      = View.GONE
+        binding.tvNoCredsMessage.text         = "Open Settings and enter your Dexcom username and password to get started."
+        binding.errorCard.visibility          = View.GONE
         binding.glucoseChart.clear()
     }
 
     private fun showNotConnected() {
-        binding.progressBar.visibility    = View.GONE
-        binding.cardCurrent.visibility    = View.GONE
-        binding.cardStatus.visibility     = View.GONE
+        binding.progressBar.visibility        = View.GONE
+        binding.cardCurrent.visibility        = View.GONE
+        binding.cardStatus.visibility         = View.GONE
+        binding.rangeBar.visibility           = View.GONE
         binding.noCredentialsGroup.visibility = View.VISIBLE
-        binding.tvNoCredsMessage.text     = "Tap Settings and press \"Connect with Dexcom\" to authorize the app."
-        binding.errorCard.visibility      = View.GONE
+        binding.tvNoCredsMessage.text         = "Tap Settings and press \"Connect with Dexcom\" to authorize the app."
+        binding.errorCard.visibility          = View.GONE
         binding.glucoseChart.clear()
     }
 
     private fun showData(readings: List<EgvReading>) {
-        binding.progressBar.visibility    = View.GONE
+        binding.progressBar.visibility        = View.GONE
         binding.noCredentialsGroup.visibility = View.GONE
-        binding.errorCard.visibility      = View.GONE
+        binding.errorCard.visibility          = View.GONE
+        binding.rangeBar.visibility           = View.VISIBLE
 
         if (readings.isEmpty()) {
             binding.cardCurrent.visibility = View.GONE
             binding.cardStatus.visibility  = View.GONE
+            // Show a helpful message instead of the generic "Connect your Dexcom" text
+            binding.glucoseChart.setNoDataText("No readings in selected time range. Try a wider range or run Diagnostics in Settings.")
+            binding.glucoseChart.setNoDataTextColor(android.graphics.Color.parseColor("#546E7A"))
+            binding.glucoseChart.clear()
             return
         }
         binding.cardCurrent.visibility = View.VISIBLE
@@ -196,12 +235,13 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showError(message: String) {
-        binding.progressBar.visibility    = View.GONE
+        binding.progressBar.visibility        = View.GONE
         binding.noCredentialsGroup.visibility = View.GONE
-        binding.errorCard.visibility      = View.VISIBLE
-        binding.tvErrorMessage.text       = message
-        binding.cardCurrent.visibility    = View.GONE
-        binding.cardStatus.visibility     = View.GONE
+        binding.errorCard.visibility          = View.VISIBLE
+        binding.tvErrorMessage.text           = message
+        binding.cardCurrent.visibility        = View.GONE
+        binding.cardStatus.visibility         = View.GONE
+        binding.rangeBar.visibility           = View.GONE
     }
 
     // ─── Current Reading ──────────────────────────────────────────────────────
@@ -223,7 +263,21 @@ class MainActivity : AppCompatActivity() {
     // ─── Chart ───────────────────────────────────────────────────────────────
 
     private fun updateChart(readings: List<EgvReading>) {
-        val entries = readings.map { Entry(it.epochMillis().toFloat(), it.glucoseValue().toFloat()) }
+        // MPAndroidChart uses Float for X values, but epoch milliseconds are ~1.7 trillion —
+        // far beyond Float's ~7 significant digits of precision. Casting directly loses the
+        // last 6 digits, collapsing all X positions to nearly the same value so the chart
+        // renders as a single invisible cluster.
+        //
+        // Fix: offset every X value by the first reading's timestamp so X values are small
+        // relative offsets in milliseconds (0..86_400_000 for 24h), well within Float range.
+        // Store the baseline so the X-axis label formatter can reconstruct the real time.
+        val baseMs = readings.first().epochMillis()
+        chartBaseMs = baseMs
+
+        val entries = readings.map { r ->
+            Entry((r.epochMillis() - baseMs).toFloat(), r.glucoseValue().toFloat())
+        }
+
         val dataSet = LineDataSet(entries, "Glucose").apply {
             color = Color.parseColor("#00BCD4")
             setCircleColor(Color.parseColor("#00BCD4"))
@@ -234,6 +288,13 @@ class MainActivity : AppCompatActivity() {
             highLightColor = Color.WHITE; highlightLineWidth = 1f
             enableDashedHighlightLine(10f, 5f, 0f)
         }
+
+        // Update formatter so labels show the correct real-world time
+        binding.glucoseChart.xAxis.valueFormatter = object : ValueFormatter() {
+            override fun getFormattedValue(value: Float) =
+                timeFmt.format(Date(chartBaseMs + value.toLong()))
+        }
+
         binding.glucoseChart.data = LineData(dataSet)
         binding.glucoseChart.notifyDataSetChanged()
         binding.glucoseChart.invalidate()
@@ -243,17 +304,17 @@ class MainActivity : AppCompatActivity() {
     // ─── Stats ────────────────────────────────────────────────────────────────
 
     private fun updateStats(readings: List<EgvReading>) {
-        val values   = readings.map { it.glucoseValue() }
-        val avg      = values.average()
-        val inRange  = values.count { it in 70..180 }
-        val low      = values.count { it < 70 }
-        val high     = values.count { it > 180 }
-        val total    = values.size.toDouble()
+        val values  = readings.map { it.glucoseValue() }
+        val avg     = values.average()
+        val inRange = values.count { it in 70..180 }
+        val low     = values.count { it < 70 }
+        val high    = values.count { it > 180 }
+        val total   = values.size.toDouble()
 
-        binding.tvAvgGlucose.text  = "%.0f".format(avg)
-        binding.tvTimeInRange.text = "${(inRange / total * 100).toInt()}%"
-        binding.tvTimeLow.text     = "${(low    / total * 100).toInt()}%"
-        binding.tvTimeHigh.text    = "${(high   / total * 100).toInt()}%"
+        binding.tvAvgGlucose.text   = "%.0f".format(avg)
+        binding.tvTimeInRange.text  = "${(inRange / total * 100).toInt()}%"
+        binding.tvTimeLow.text      = "${(low    / total * 100).toInt()}%"
+        binding.tvTimeHigh.text     = "${(high   / total * 100).toInt()}%"
         binding.tvReadingCount.text = "${readings.size} readings"
     }
 }

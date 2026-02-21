@@ -15,15 +15,16 @@ const val REDIRECT_URI        = "https://localhost/callback"
 const val OAUTH_SCOPE         = "offline_access"
 
 data class TokenResponse(
-    @SerializedName("access_token")  val accessToken: String,
-    @SerializedName("refresh_token") val refreshToken: String,
-    @SerializedName("expires_in")    val expiresIn: Int,
-    @SerializedName("token_type")    val tokenType: String
+    @SerializedName("access_token")  val accessToken: String?,
+    @SerializedName("refresh_token") val refreshToken: String?,   // null on some sandbox responses
+    @SerializedName("expires_in")    val expiresIn: Int?,
+    @SerializedName("token_type")    val tokenType: String?
 )
 
 data class EgvsResponse(
-    @SerializedName("egvs") val egvs: List<EgvReading>?,
-    @SerializedName("unit") val unit: String?
+    @SerializedName("records")  val egvs: List<EgvReading>?,
+    @SerializedName("unit")     val unit: String?,
+    @SerializedName("rateUnit") val rateUnit: String?
 )
 
 data class DataRangeResponse(
@@ -41,25 +42,43 @@ data class TimeRecord(
 )
 
 data class EgvReading(
-    @SerializedName("systemTime")    val systemTime: String,
-    @SerializedName("displayTime")   val displayTime: String,
+    @SerializedName("systemTime")    val systemTime: String?,
+    @SerializedName("displayTime")   val displayTime: String?,
+    // G7 / standard: `value` is the primary reading
     @SerializedName("value")         val value: Int?,
+    // G6 smoothing: smoothedValue may be null at session edges
+    @SerializedName("smoothedValue") val smoothedValue: Int?,
+    // realtimeValue is always populated when a sensor reading exists
     @SerializedName("realtimeValue") val realtimeValue: Int?,
     @SerializedName("status")        val status: String?,
-    @SerializedName("trend")         val trend: String,
+    @SerializedName("trend")         val trend: String?,
     @SerializedName("trendRate")     val trendRate: Double?
 ) {
-    fun epochMillis(): Long = try {
-        // Handle both "2024-01-01T12:00:00" and "2024-01-01T12:00:00+00:00"
-        val s = systemTime.replace(Regex("[+-]\\d{2}:\\d{2}$"), "").replace("Z", "")
-        val fmt = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", java.util.Locale.US)
-        fmt.timeZone = java.util.TimeZone.getTimeZone("UTC")
-        fmt.parse(s)?.time ?: 0L
-    } catch (e: Exception) { 0L }
+    /**
+     * Returns the best available glucose reading.
+     * Priority: value (= smoothedValue for G6, direct for G7) → realtimeValue → smoothedValue
+     * All three are checked so neither device type silently returns 0.
+     */
+    fun glucoseValue(): Int = value ?: realtimeValue ?: smoothedValue ?: 0
 
-    fun glucoseValue(): Int = value ?: realtimeValue ?: 0
+    fun epochMillis(): Long {
+        if (systemTime.isNullOrBlank()) return 0L
+        return try {
+            // Strip UTC offset (+00:00 / -05:00 / Z) leaving plain datetime
+            val cleaned = systemTime
+                .replace(Regex("[+-]\\d{2}:\\d{2}$"), "")
+                .replace("Z", "")
+                .trim()
+            val fmt = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", java.util.Locale.US)
+            fmt.timeZone = java.util.TimeZone.getTimeZone("UTC")
+            fmt.parse(cleaned)?.time ?: 0L
+        } catch (e: Exception) {
+            android.util.Log.e("EgvReading", "Failed to parse time: $systemTime", e)
+            0L
+        }
+    }
 
-    fun trendArrow(): String = when (trend.lowercase()) {
+    fun trendArrow(): String = when (trend?.lowercase()) {
         "doubleup"       -> "↑↑"
         "singleup"       -> "↑"
         "fortyfiveup"    -> "↗"
@@ -72,21 +91,18 @@ data class EgvReading(
         else             -> "–"
     }
 
-    fun glucoseColor(): Int {
-        val v = glucoseValue()
-        return when {
-            v < 70   -> android.graphics.Color.parseColor("#FF4444")
-            v < 80   -> android.graphics.Color.parseColor("#FF8800")
-            v <= 180 -> android.graphics.Color.parseColor("#00E676")
-            v <= 250 -> android.graphics.Color.parseColor("#FF8800")
-            else     -> android.graphics.Color.parseColor("#FF4444")
-        }
+    fun glucoseColor(): Int = when (val v = glucoseValue()) {
+        in 1..69   -> android.graphics.Color.parseColor("#FF4444")
+        in 70..79  -> android.graphics.Color.parseColor("#FF8800")
+        in 80..180 -> android.graphics.Color.parseColor("#00E676")
+        in 181..250 -> android.graphics.Color.parseColor("#FF8800")
+        else       -> if (v > 250) android.graphics.Color.parseColor("#FF4444")
+                      else android.graphics.Color.parseColor("#546E7A")
     }
 }
 
 interface DexcomApiService {
 
-    // Token exchange — v2 endpoint (correct per Dexcom docs)
     @FormUrlEncoded
     @POST("v2/oauth2/token")
     suspend fun getToken(
@@ -107,15 +123,13 @@ interface DexcomApiService {
         @Field("redirect_uri")  redirectUri: String = REDIRECT_URI
     ): Response<TokenResponse>
 
-    // EGV readings — v3 endpoint
     @GET("v3/users/self/egvs")
     suspend fun getEgvs(
         @Header("Authorization") bearerToken: String,
-        @Query("startDate")      startDate: String,
-        @Query("endDate")        endDate: String
+        @Query(value = "startDate", encoded = true) startDate: String,
+        @Query(value = "endDate",   encoded = true) endDate: String
     ): Response<EgvsResponse>
 
-    // DataRange — tells us the earliest/latest data available for this user
     @GET("v3/users/self/dataRange")
     suspend fun getDataRange(
         @Header("Authorization") bearerToken: String
@@ -125,7 +139,7 @@ interface DexcomApiService {
 object DexcomRetrofit {
     fun create(useSandbox: Boolean = false): DexcomApiService {
         val baseUrl = if (useSandbox) DEXCOM_BASE_SANDBOX else DEXCOM_BASE_PROD
-        val logging = HttpLoggingInterceptor().apply { level = HttpLoggingInterceptor.Level.BODY }
+        val logging = HttpLoggingInterceptor().apply { level = HttpLoggingInterceptor.Level.BASIC }
         val client = OkHttpClient.Builder()
             .addInterceptor(logging)
             .connectTimeout(20, TimeUnit.SECONDS)

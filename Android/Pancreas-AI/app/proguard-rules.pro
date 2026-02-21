@@ -1,6 +1,0 @@
--keep class com.pancreas.ai.** { *; }
--keep class com.google.gson.** { *; }
--keepattributes Signature
--keepattributes *Annotation*
--dontwarn okhttp3.**
--dontwarn retrofit2.**

@@ -6,7 +6,6 @@
     android:layout_height="match_parent"
     android:background="@color/bg_primary">
 
-    <!-- App Bar -->
     <com.google.android.material.appbar.AppBarLayout
         android:id="@+id/appBarLayout"
         android:layout_width="match_parent"
@@ -25,7 +24,6 @@
 
     </com.google.android.material.appbar.AppBarLayout>
 
-    <!-- Scrollable Content -->
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -39,7 +37,7 @@
             android:orientation="vertical"
             android:padding="16dp">
 
-            <!-- Progress Bar -->
+            <!-- Progress -->
             <ProgressBar
                 android:id="@+id/progressBar"
                 android:layout_width="match_parent"
@@ -58,9 +56,9 @@
                 android:textColor="@color/text_secondary"
                 android:textSize="12sp"
                 android:gravity="end"
-                android:layout_marginBottom="12dp" />
+                android:layout_marginBottom="8dp" />
 
-            <!-- No Credentials Group -->
+            <!-- No Credentials -->
             <LinearLayout
                 android:id="@+id/noCredentialsGroup"
                 android:layout_width="match_parent"
@@ -90,7 +88,7 @@
                     android:id="@+id/tvNoCredsMessage"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Enter your Dexcom Developer credentials in Settings, then tap Connect with Dexcom."
+                    android:text="Open Settings and enter your Dexcom username and password."
                     android:textColor="@color/text_secondary"
                     android:textSize="14sp"
                     android:gravity="center"
@@ -100,79 +98,33 @@
                     android:id="@+id/btnGoToSettings"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Go to Settings →"
+                    android:text="Open Settings"
                     app:backgroundTint="@color/dexcom_cyan"
-                    android:textColor="@color/bg_primary" />
+                    android:textColor="#000000" />
 
             </LinearLayout>
 
-            <!-- Error Card -->
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/errorCard"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                app:cardBackgroundColor="@color/error_surface"
-                app:cardCornerRadius="12dp"
-                app:strokeColor="@color/glucose_low"
-                app:strokeWidth="1dp"
-                android:layout_marginBottom="16dp"
-                android:visibility="gone">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:padding="16dp"
-                    android:gravity="center_vertical">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="⚠️"
-                        android:textSize="24sp"
-                        android:layout_marginEnd="12dp" />
-
-                    <TextView
-                        android:id="@+id/tvErrorMessage"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:textColor="@color/glucose_low"
-                        android:textSize="14sp" />
-
-                </LinearLayout>
-
-            </com.google.android.material.card.MaterialCardView>
-
             <!-- Current Reading Card -->
-            <com.google.android.material.card.MaterialCardView
+            <androidx.cardview.widget.CardView
                 android:id="@+id/cardCurrent"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
                 app:cardBackgroundColor="@color/bg_surface"
                 app:cardCornerRadius="16dp"
-                app:strokeColor="@color/border"
-                app:strokeWidth="1dp"
-                android:layout_marginBottom="16dp"
+                app:cardElevation="4dp"
                 android:visibility="gone">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="20dp">
+                    android:padding="20dp"
+                    android:gravity="center">
 
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="CURRENT GLUCOSE"
-                        android:textColor="@color/text_secondary"
-                        android:textSize="11sp"
-                        android:letterSpacing="0.15"
-                        android:layout_marginBottom="8dp" />
-
+                    <!-- Glucose value + trend -->
                     <LinearLayout
-                        android:layout_width="match_parent"
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
                         android:gravity="center_vertical">
@@ -182,24 +134,24 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="---"
-                            android:textSize="80sp"
+                            android:textColor="@color/glucose_normal"
+                            android:textSize="72sp"
                             android:textStyle="bold"
-                            android:fontFamily="sans-serif-light"
-                            android:textColor="@color/dexcom_cyan" />
+                            android:includeFontPadding="false" />
 
                         <LinearLayout
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:orientation="vertical"
-                            android:layout_marginStart="12dp">
+                            android:layout_marginStart="8dp">
 
                             <TextView
                                 android:id="@+id/tvTrend"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="→"
-                                android:textSize="36sp"
-                                android:textColor="@color/dexcom_cyan" />
+                                android:textColor="@color/glucose_normal"
+                                android:textSize="28sp" />
 
                             <TextView
                                 android:id="@+id/tvUnit"
@@ -207,114 +159,145 @@
                                 android:layout_height="wrap_content"
                                 android:text="mg/dL"
                                 android:textColor="@color/text_secondary"
-                                android:textSize="14sp" />
-
-                        </LinearLayout>
-
-                        <View android:layout_width="0dp" android:layout_height="0dp" android:layout_weight="1" />
-
-                        <LinearLayout
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:orientation="vertical"
-                            android:gravity="end">
-
-                            <TextView
-                                android:id="@+id/tvRangeLabel"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="IN RANGE"
-                                android:textSize="16sp"
-                                android:textStyle="bold"
-                                android:letterSpacing="0.1"
-                                android:textColor="@color/glucose_ok" />
-
-                            <TextView
-                                android:id="@+id/tvReadingTime"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text=""
-                                android:textColor="@color/text_secondary"
-                                android:textSize="12sp" />
+                                android:textSize="13sp" />
 
                         </LinearLayout>
 
                     </LinearLayout>
-
-                </LinearLayout>
-
-            </com.google.android.material.card.MaterialCardView>
-
-            <!-- Chart Card -->
-            <com.google.android.material.card.MaterialCardView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                app:cardBackgroundColor="@color/bg_surface"
-                app:cardCornerRadius="16dp"
-                app:strokeColor="@color/border"
-                app:strokeWidth="1dp"
-                android:layout_marginBottom="16dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="16dp">
 
                     <TextView
+                        android:id="@+id/tvRangeLabel"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="24-HOUR HISTORY"
-                        android:textColor="@color/text_secondary"
-                        android:textSize="11sp"
-                        android:letterSpacing="0.15"
-                        android:layout_marginBottom="12dp" />
+                        android:text="IN RANGE"
+                        android:textColor="@color/glucose_normal"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        android:letterSpacing="0.1"
+                        android:layout_marginTop="4dp" />
 
-                    <com.github.mikephil.charting.charts.LineChart
-                        android:id="@+id/glucoseChart"
-                        android:layout_width="match_parent"
-                        android:layout_height="220dp" />
-
-                    <!-- Legend -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
+                    <TextView
+                        android:id="@+id/tvReadingTime"
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center"
-                        android:layout_marginTop="8dp">
-
-                        <View
-                            android:layout_width="20dp"
-                            android:layout_height="2dp"
-                            android:background="@color/glucose_low"
-                            android:layout_marginEnd="4dp" />
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                            android:text="Low &lt;70" android:textColor="@color/text_secondary" android:textSize="11sp"
-                            android:layout_marginEnd="16dp" />
-
-                        <View
-                            android:layout_width="20dp"
-                            android:layout_height="2dp"
-                            android:background="@color/glucose_high"
-                            android:layout_marginEnd="4dp" />
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                            android:text="High &gt;180" android:textColor="@color/text_secondary" android:textSize="11sp" />
-
-                    </LinearLayout>
+                        android:text=""
+                        android:textColor="@color/text_secondary"
+                        android:textSize="12sp"
+                        android:layout_marginTop="4dp" />
 
                 </LinearLayout>
 
-            </com.google.android.material.card.MaterialCardView>
+            </androidx.cardview.widget.CardView>
+
+            <!-- Time Range Bar -->
+            <LinearLayout
+                android:id="@+id/rangeBar"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="8dp"
+                android:gravity="center"
+                android:visibility="gone">
+
+                <TextView
+                    android:id="@+id/btn1h"
+                    android:layout_width="0dp"
+                    android:layout_height="36dp"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:text="1H"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    android:textColor="#546E7A"
+                    android:paddingHorizontal="4dp"
+                    android:clickable="true"
+                    android:focusable="true" />
+
+                <TextView
+                    android:id="@+id/btn3h"
+                    android:layout_width="0dp"
+                    android:layout_height="36dp"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:text="3H"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    android:textColor="#546E7A"
+                    android:paddingHorizontal="4dp"
+                    android:clickable="true"
+                    android:focusable="true" />
+
+                <TextView
+                    android:id="@+id/btn6h"
+                    android:layout_width="0dp"
+                    android:layout_height="36dp"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:text="6H"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    android:textColor="#00BCD4"
+                    android:paddingHorizontal="4dp"
+                    android:clickable="true"
+                    android:focusable="true" />
+
+                <TextView
+                    android:id="@+id/btn12h"
+                    android:layout_width="0dp"
+                    android:layout_height="36dp"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:text="12H"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    android:textColor="#546E7A"
+                    android:paddingHorizontal="4dp"
+                    android:clickable="true"
+                    android:focusable="true" />
+
+                <TextView
+                    android:id="@+id/btn24h"
+                    android:layout_width="0dp"
+                    android:layout_height="36dp"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:text="24H"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    android:textColor="#546E7A"
+                    android:paddingHorizontal="4dp"
+                    android:clickable="true"
+                    android:focusable="true" />
+
+            </LinearLayout>
+
+            <!-- Chart Card -->
+            <androidx.cardview.widget.CardView
+                android:id="@+id/cardChart"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                app:cardBackgroundColor="@color/bg_surface"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="4dp">
+
+                <com.github.mikephil.charting.charts.LineChart
+                    android:id="@+id/glucoseChart"
+                    android:layout_width="match_parent"
+                    android:layout_height="220dp"
+                    android:padding="8dp" />
+
+            </androidx.cardview.widget.CardView>
 
             <!-- Stats Card -->
-            <com.google.android.material.card.MaterialCardView
+            <androidx.cardview.widget.CardView
                 android:id="@+id/cardStatus"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
                 app:cardBackgroundColor="@color/bg_surface"
                 app:cardCornerRadius="16dp"
-                app:strokeColor="@color/border"
-                app:strokeWidth="1dp"
+                app:cardElevation="4dp"
                 android:visibility="gone">
 
                 <LinearLayout
@@ -326,59 +309,120 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="24-HOUR STATISTICS"
+                        android:text="Statistics"
                         android:textColor="@color/text_secondary"
-                        android:textSize="11sp"
-                        android:letterSpacing="0.15"
-                        android:layout_marginBottom="16dp" />
+                        android:textSize="12sp"
+                        android:textStyle="bold"
+                        android:letterSpacing="0.12"
+                        android:layout_marginBottom="12dp" />
 
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="horizontal">
 
-                        <!-- Average -->
-                        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
-                            android:layout_weight="1" android:orientation="vertical" android:gravity="center">
-                            <TextView android:id="@+id/tvAvgGlucose"
-                                android:layout_width="wrap_content" android:layout_height="wrap_content"
-                                android:text="---" android:textSize="28sp" android:textStyle="bold"
-                                android:textColor="@color/dexcom_cyan" />
-                            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                                android:text="Average" android:textColor="@color/text_secondary" android:textSize="11sp" />
+                        <!-- Avg -->
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical"
+                            android:gravity="center">
+
+                            <TextView
+                                android:id="@+id/tvAvgGlucose"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="--"
+                                android:textColor="@color/text_primary"
+                                android:textSize="24sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Avg mg/dL"
+                                android:textColor="@color/text_secondary"
+                                android:textSize="11sp" />
+
                         </LinearLayout>
 
-                        <!-- Time in Range -->
-                        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
-                            android:layout_weight="1" android:orientation="vertical" android:gravity="center">
-                            <TextView android:id="@+id/tvTimeInRange"
-                                android:layout_width="wrap_content" android:layout_height="wrap_content"
-                                android:text="--%" android:textSize="28sp" android:textStyle="bold"
-                                android:textColor="@color/glucose_ok" />
-                            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                                android:text="In Range" android:textColor="@color/text_secondary" android:textSize="11sp" />
+                        <!-- In Range -->
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical"
+                            android:gravity="center">
+
+                            <TextView
+                                android:id="@+id/tvTimeInRange"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="--%"
+                                android:textColor="@color/glucose_normal"
+                                android:textSize="24sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="In Range"
+                                android:textColor="@color/text_secondary"
+                                android:textSize="11sp" />
+
                         </LinearLayout>
 
-                        <!-- Time Low -->
-                        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
-                            android:layout_weight="1" android:orientation="vertical" android:gravity="center">
-                            <TextView android:id="@+id/tvTimeLow"
-                                android:layout_width="wrap_content" android:layout_height="wrap_content"
-                                android:text="--%" android:textSize="28sp" android:textStyle="bold"
-                                android:textColor="@color/glucose_low" />
-                            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                                android:text="Low" android:textColor="@color/text_secondary" android:textSize="11sp" />
+                        <!-- Low -->
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical"
+                            android:gravity="center">
+
+                            <TextView
+                                android:id="@+id/tvTimeLow"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="--%"
+                                android:textColor="@color/glucose_low"
+                                android:textSize="24sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Low"
+                                android:textColor="@color/text_secondary"
+                                android:textSize="11sp" />
+
                         </LinearLayout>
 
-                        <!-- Time High -->
-                        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
-                            android:layout_weight="1" android:orientation="vertical" android:gravity="center">
-                            <TextView android:id="@+id/tvTimeHigh"
-                                android:layout_width="wrap_content" android:layout_height="wrap_content"
-                                android:text="--%" android:textSize="28sp" android:textStyle="bold"
-                                android:textColor="@color/glucose_high" />
-                            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                                android:text="High" android:textColor="@color/text_secondary" android:textSize="11sp" />
+                        <!-- High -->
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical"
+                            android:gravity="center">
+
+                            <TextView
+                                android:id="@+id/tvTimeHigh"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="--%"
+                                android:textColor="@color/glucose_high"
+                                android:textSize="24sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="High"
+                                android:textColor="@color/text_secondary"
+                                android:textSize="11sp" />
+
                         </LinearLayout>
 
                     </LinearLayout>
@@ -391,17 +435,54 @@
                         android:textColor="@color/text_secondary"
                         android:textSize="11sp"
                         android:gravity="center"
-                        android:layout_marginTop="12dp" />
+                        android:layout_marginTop="8dp" />
 
                 </LinearLayout>
 
-            </com.google.android.material.card.MaterialCardView>
+            </androidx.cardview.widget.CardView>
+
+            <!-- Error Card -->
+            <androidx.cardview.widget.CardView
+                android:id="@+id/errorCard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                app:cardBackgroundColor="#1A1010"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="4dp"
+                android:visibility="gone">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="⚠ Error"
+                        android:textColor="@color/glucose_low"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        android:layout_marginBottom="8dp" />
+
+                    <TextView
+                        android:id="@+id/tvErrorMessage"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="13sp" />
+
+                </LinearLayout>
+
+            </androidx.cardview.widget.CardView>
 
         </LinearLayout>
 
     </androidx.core.widget.NestedScrollView>
 
-    <!-- FAB Refresh -->
+    <!-- FAB -->
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fabRefresh"
         android:layout_width="wrap_content"
@@ -409,8 +490,8 @@
         android:layout_gravity="bottom|end"
         android:layout_margin="16dp"
         app:backgroundTint="@color/dexcom_cyan"
-        app:tint="@color/bg_primary"
-        android:src="@android:drawable/ic_menu_rotate"
-        app:layout_behavior="com.google.android.material.behavior.HideBottomViewOnScrollBehavior" />
+        app:tint="#000000"
+        android:contentDescription="Refresh"
+        app:srcCompat="@android:drawable/ic_menu_rotate" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

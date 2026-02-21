@@ -1,33 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Backgrounds -->
-    <color name="bg_primary">#0A0F1A</color>
-    <color name="bg_surface">#111827</color>
-    <color name="bg_elevated">#1C2537</color>
-
-    <!-- Borders -->
-    <color name="border">#1E3148</color>
+    <!-- Background palette -->
+    <color name="bg_primary">#0A1628</color>
+    <color name="bg_surface">#0F2035</color>
+    <color name="bg_card">#1A2A3A</color>
 
     <!-- Text -->
-    <color name="text_primary">#E8F4FD</color>
-    <color name="text_secondary">#6B8099</color>
+    <color name="text_primary">#E0E8F0</color>
+    <color name="text_secondary">#6A8499</color>
 
-    <!-- Dexcom Brand -->
+    <!-- Dexcom brand -->
     <color name="dexcom_cyan">#00BCD4</color>
     <color name="dexcom_cyan_dim">#00838F</color>
 
-    <!-- Glucose States -->
+    <!-- Glucose status -->
+    <color name="glucose_normal">#00E676</color>
     <color name="glucose_low">#FF4444</color>
-    <color name="glucose_near_low">#FF8800</color>
-    <color name="glucose_ok">#00E676</color>
     <color name="glucose_high">#FF8800</color>
-    <color name="glucose_very_high">#FF4444</color>
-
-    <!-- Error -->
-    <color name="error_surface">#1A0A0A</color>
-
-    <!-- System -->
-    <color name="colorPrimary">#00BCD4</color>
-    <color name="colorPrimaryDark">#006064</color>
-    <color name="colorAccent">#00BCD4</color>
+    <color name="glucose_unknown">#546E7A</color>
 </resources>

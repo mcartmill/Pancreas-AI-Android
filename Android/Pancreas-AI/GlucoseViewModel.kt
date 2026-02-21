@@ -13,7 +13,7 @@ import kotlinx.coroutines.launch
 sealed class UiState {
     object Loading       : UiState()
     object NoCredentials : UiState()
-    object NotConnected  : UiState()   // has client creds but no OAuth tokens yet
+    object NotConnected  : UiState()
     data class Success(val readings: List<EgvReading>) : UiState()
     data class Error(val message: String) : UiState()
 }
@@ -29,7 +29,16 @@ class GlucoseViewModel(app: Application) : AndroidViewModel(app) {
     private val _lastUpdated = MutableLiveData<Long>(0L)
     val lastUpdated: LiveData<Long> = _lastUpdated
 
+    private val _chartHours = MutableLiveData(CredentialsManager.getChartHours(app))
+    val chartHours: LiveData<Int> = _chartHours
+
     private var refreshJob: Job? = null
+
+    fun setChartHours(hours: Int) {
+        CredentialsManager.setChartHours(getApplication(), hours)
+        _chartHours.value = hours
+        refresh()
+    }
 
     fun startAutoRefresh() {
         refreshJob?.cancel()
@@ -47,20 +56,28 @@ class GlucoseViewModel(app: Application) : AndroidViewModel(app) {
     fun refresh() { viewModelScope.launch { loadReadings() } }
 
     private suspend fun loadReadings() {
-        val ctx = getApplication<Application>()
+        val ctx  = getApplication<Application>()
+        val mode = CredentialsManager.getAuthMode(ctx)
 
-        if (!CredentialsManager.hasClientCredentials(ctx)) {
+        val credentialsReady = when (mode) {
+            AuthMode.SHARE -> CredentialsManager.hasShareCredentials(ctx)
+            AuthMode.OAUTH -> CredentialsManager.hasClientCredentials(ctx)
+        }
+
+        if (!credentialsReady) {
             _uiState.postValue(UiState.NoCredentials)
             return
         }
-        if (!CredentialsManager.isConnected(ctx)) {
+
+        if (mode == AuthMode.OAUTH && !CredentialsManager.isOAuthConnected(ctx)) {
             _uiState.postValue(UiState.NotConnected)
             return
         }
 
         _uiState.postValue(UiState.Loading)
         try {
-            val readings = repository.fetchReadings(hours = 24)
+            val hours    = _chartHours.value ?: CredentialsManager.getChartHours(ctx)
+            val readings = repository.fetchReadings(hours)
             _uiState.postValue(UiState.Success(readings))
             _lastUpdated.postValue(System.currentTimeMillis())
         } catch (e: Exception) {
