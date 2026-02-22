@@ -29,7 +29,7 @@
         android:layout_height="match_parent"
         app:layout_behavior="@string/appbar_scrolling_view_behavior"
         android:clipToPadding="false"
-        android:paddingBottom="80dp">
+        android:paddingBottom="96dp">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -71,7 +71,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="🩸"
+                    android:text="&#x1FA78;"
                     android:textSize="64sp"
                     android:layout_marginBottom="16dp" />
 
@@ -122,7 +122,6 @@
                     android:padding="20dp"
                     android:gravity="center">
 
-                    <!-- Glucose value + trend -->
                     <LinearLayout
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
@@ -149,7 +148,7 @@
                                 android:id="@+id/tvTrend"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="→"
+                                android:text="&#x2192;"
                                 android:textColor="@color/glucose_normal"
                                 android:textSize="28sp" />
 
@@ -199,75 +198,35 @@
                 android:gravity="center"
                 android:visibility="gone">
 
-                <TextView
-                    android:id="@+id/btn1h"
-                    android:layout_width="0dp"
-                    android:layout_height="36dp"
-                    android:layout_weight="1"
-                    android:gravity="center"
-                    android:text="1H"
-                    android:textSize="13sp"
-                    android:textStyle="bold"
-                    android:textColor="#546E7A"
-                    android:paddingHorizontal="4dp"
-                    android:clickable="true"
-                    android:focusable="true" />
+                <TextView android:id="@+id/btn1h"
+                    android:layout_width="0dp" android:layout_height="36dp" android:layout_weight="1"
+                    android:gravity="center" android:text="1H" android:textSize="13sp"
+                    android:textStyle="bold" android:textColor="#546E7A"
+                    android:clickable="true" android:focusable="true" />
 
-                <TextView
-                    android:id="@+id/btn3h"
-                    android:layout_width="0dp"
-                    android:layout_height="36dp"
-                    android:layout_weight="1"
-                    android:gravity="center"
-                    android:text="3H"
-                    android:textSize="13sp"
-                    android:textStyle="bold"
-                    android:textColor="#546E7A"
-                    android:paddingHorizontal="4dp"
-                    android:clickable="true"
-                    android:focusable="true" />
+                <TextView android:id="@+id/btn3h"
+                    android:layout_width="0dp" android:layout_height="36dp" android:layout_weight="1"
+                    android:gravity="center" android:text="3H" android:textSize="13sp"
+                    android:textStyle="bold" android:textColor="#546E7A"
+                    android:clickable="true" android:focusable="true" />
 
-                <TextView
-                    android:id="@+id/btn6h"
-                    android:layout_width="0dp"
-                    android:layout_height="36dp"
-                    android:layout_weight="1"
-                    android:gravity="center"
-                    android:text="6H"
-                    android:textSize="13sp"
-                    android:textStyle="bold"
-                    android:textColor="#00BCD4"
-                    android:paddingHorizontal="4dp"
-                    android:clickable="true"
-                    android:focusable="true" />
+                <TextView android:id="@+id/btn6h"
+                    android:layout_width="0dp" android:layout_height="36dp" android:layout_weight="1"
+                    android:gravity="center" android:text="6H" android:textSize="13sp"
+                    android:textStyle="bold" android:textColor="#00BCD4"
+                    android:clickable="true" android:focusable="true" />
 
-                <TextView
-                    android:id="@+id/btn12h"
-                    android:layout_width="0dp"
-                    android:layout_height="36dp"
-                    android:layout_weight="1"
-                    android:gravity="center"
-                    android:text="12H"
-                    android:textSize="13sp"
-                    android:textStyle="bold"
-                    android:textColor="#546E7A"
-                    android:paddingHorizontal="4dp"
-                    android:clickable="true"
-                    android:focusable="true" />
+                <TextView android:id="@+id/btn12h"
+                    android:layout_width="0dp" android:layout_height="36dp" android:layout_weight="1"
+                    android:gravity="center" android:text="12H" android:textSize="13sp"
+                    android:textStyle="bold" android:textColor="#546E7A"
+                    android:clickable="true" android:focusable="true" />
 
-                <TextView
-                    android:id="@+id/btn24h"
-                    android:layout_width="0dp"
-                    android:layout_height="36dp"
-                    android:layout_weight="1"
-                    android:gravity="center"
-                    android:text="24H"
-                    android:textSize="13sp"
-                    android:textStyle="bold"
-                    android:textColor="#546E7A"
-                    android:paddingHorizontal="4dp"
-                    android:clickable="true"
-                    android:focusable="true" />
+                <TextView android:id="@+id/btn24h"
+                    android:layout_width="0dp" android:layout_height="36dp" android:layout_weight="1"
+                    android:gravity="center" android:text="24H" android:textSize="13sp"
+                    android:textStyle="bold" android:textColor="#546E7A"
+                    android:clickable="true" android:focusable="true" />
 
             </LinearLayout>
 
@@ -286,6 +245,74 @@
                     android:layout_width="match_parent"
                     android:layout_height="220dp"
                     android:padding="8dp" />
+
+            </androidx.cardview.widget.CardView>
+
+            <!-- Insulin Log Card -->
+            <androidx.cardview.widget.CardView
+                android:id="@+id/cardInsulin"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                app:cardBackgroundColor="@color/bg_surface"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="4dp"
+                android:visibility="gone">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <!-- Header row -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="12dp">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="INSULIN LOG"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="12sp"
+                            android:textStyle="bold"
+                            android:letterSpacing="0.12" />
+
+                        <TextView
+                            android:id="@+id/tvTotalInsulin"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textColor="@color/dexcom_cyan"
+                            android:textSize="13sp"
+                            android:textStyle="bold" />
+
+                    </LinearLayout>
+
+                    <!-- Dose list container -->
+                    <LinearLayout
+                        android:id="@+id/insulinListContainer"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical" />
+
+                    <!-- Empty state -->
+                    <TextView
+                        android:id="@+id/tvNoInsulin"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="No doses logged yet. Tap + to add."
+                        android:textColor="@color/text_secondary"
+                        android:textSize="13sp"
+                        android:gravity="center"
+                        android:padding="12dp"
+                        android:visibility="gone" />
+
+                </LinearLayout>
 
             </androidx.cardview.widget.CardView>
 
@@ -309,7 +336,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Statistics"
+                        android:text="STATISTICS"
                         android:textColor="@color/text_secondary"
                         android:textSize="12sp"
                         android:textStyle="bold"
@@ -321,108 +348,44 @@
                         android:layout_height="wrap_content"
                         android:orientation="horizontal">
 
-                        <!-- Avg -->
-                        <LinearLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:orientation="vertical"
-                            android:gravity="center">
-
-                            <TextView
-                                android:id="@+id/tvAvgGlucose"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="--"
-                                android:textColor="@color/text_primary"
-                                android:textSize="24sp"
-                                android:textStyle="bold" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Avg mg/dL"
-                                android:textColor="@color/text_secondary"
-                                android:textSize="11sp" />
-
+                        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
+                            android:layout_weight="1" android:orientation="vertical" android:gravity="center">
+                            <TextView android:id="@+id/tvAvgGlucose"
+                                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                                android:text="--" android:textColor="@color/text_primary"
+                                android:textSize="24sp" android:textStyle="bold" />
+                            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                                android:text="Avg mg/dL" android:textColor="@color/text_secondary" android:textSize="11sp" />
                         </LinearLayout>
 
-                        <!-- In Range -->
-                        <LinearLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:orientation="vertical"
-                            android:gravity="center">
-
-                            <TextView
-                                android:id="@+id/tvTimeInRange"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="--%"
-                                android:textColor="@color/glucose_normal"
-                                android:textSize="24sp"
-                                android:textStyle="bold" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="In Range"
-                                android:textColor="@color/text_secondary"
-                                android:textSize="11sp" />
-
+                        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
+                            android:layout_weight="1" android:orientation="vertical" android:gravity="center">
+                            <TextView android:id="@+id/tvTimeInRange"
+                                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                                android:text="--%"  android:textColor="@color/glucose_normal"
+                                android:textSize="24sp" android:textStyle="bold" />
+                            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                                android:text="In Range" android:textColor="@color/text_secondary" android:textSize="11sp" />
                         </LinearLayout>
 
-                        <!-- Low -->
-                        <LinearLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:orientation="vertical"
-                            android:gravity="center">
-
-                            <TextView
-                                android:id="@+id/tvTimeLow"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="--%"
-                                android:textColor="@color/glucose_low"
-                                android:textSize="24sp"
-                                android:textStyle="bold" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Low"
-                                android:textColor="@color/text_secondary"
-                                android:textSize="11sp" />
-
+                        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
+                            android:layout_weight="1" android:orientation="vertical" android:gravity="center">
+                            <TextView android:id="@+id/tvTimeLow"
+                                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                                android:text="--%"  android:textColor="@color/glucose_low"
+                                android:textSize="24sp" android:textStyle="bold" />
+                            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                                android:text="Low"  android:textColor="@color/text_secondary" android:textSize="11sp" />
                         </LinearLayout>
 
-                        <!-- High -->
-                        <LinearLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:orientation="vertical"
-                            android:gravity="center">
-
-                            <TextView
-                                android:id="@+id/tvTimeHigh"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="--%"
-                                android:textColor="@color/glucose_high"
-                                android:textSize="24sp"
-                                android:textStyle="bold" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="High"
-                                android:textColor="@color/text_secondary"
-                                android:textSize="11sp" />
-
+                        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
+                            android:layout_weight="1" android:orientation="vertical" android:gravity="center">
+                            <TextView android:id="@+id/tvTimeHigh"
+                                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                                android:text="--%"  android:textColor="@color/glucose_high"
+                                android:textSize="24sp" android:textStyle="bold" />
+                            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                                android:text="High"  android:textColor="@color/text_secondary" android:textSize="11sp" />
                         </LinearLayout>
 
                     </LinearLayout>
@@ -461,7 +424,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="⚠ Error"
+                        android:text="&#x26A0; Error"
                         android:textColor="@color/glucose_low"
                         android:textSize="14sp"
                         android:textStyle="bold"
@@ -482,16 +445,36 @@
 
     </androidx.core.widget.NestedScrollView>
 
-    <!-- FAB -->
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/fabRefresh"
+    <!-- FAB stack: insulin log (top) + refresh (bottom) -->
+    <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|end"
+        android:orientation="vertical"
         android:layout_margin="16dp"
-        app:backgroundTint="@color/dexcom_cyan"
-        app:tint="#000000"
-        android:contentDescription="Refresh"
-        app:srcCompat="@android:drawable/ic_menu_rotate" />
+        android:gravity="end">
+
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/fabInsulin"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            app:backgroundTint="#4A1080"
+            app:tint="#FFFFFF"
+            android:contentDescription="Log Insulin"
+            app:srcCompat="@android:drawable/ic_input_add"
+            app:fabSize="normal" />
+
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/fabRefresh"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:backgroundTint="@color/dexcom_cyan"
+            app:tint="#000000"
+            android:contentDescription="Refresh"
+            app:srcCompat="@android:drawable/ic_menu_rotate"
+            app:fabSize="normal" />
+
+    </LinearLayout>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

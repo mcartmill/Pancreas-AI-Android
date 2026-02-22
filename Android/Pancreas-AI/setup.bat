@@ -382,6 +382,7 @@ for %%F in (
     DexcomApiService.kt DexcomShareService.kt CredentialsManager.kt
     GlucoseRepository.kt GlucoseViewModel.kt MainActivity.kt
     SettingsActivity.kt OAuthWebViewActivity.kt BootReceiver.kt
+    InsulinEntry.kt
 ) do (
     if exist "%BAT_DIR%%%F" (
         copy /Y "%BAT_DIR%%%F" "%PKG%\%%F" >nul

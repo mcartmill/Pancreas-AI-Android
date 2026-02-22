@@ -32,6 +32,35 @@ class GlucoseViewModel(app: Application) : AndroidViewModel(app) {
     private val _chartHours = MutableLiveData(CredentialsManager.getChartHours(app))
     val chartHours: LiveData<Int> = _chartHours
 
+    // ── Insulin ───────────────────────────────────────────────────────────────
+
+    private val _insulinEntries = MutableLiveData<List<InsulinEntry>>(emptyList())
+    val insulinEntries: LiveData<List<InsulinEntry>> = _insulinEntries
+
+    init {
+        loadInsulin()
+    }
+
+    private fun loadInsulin() {
+        val ctx = getApplication<Application>()
+        _insulinEntries.postValue(InsulinManager.load(ctx))
+    }
+
+    fun addInsulin(units: Double, type: InsulinType, timestampMs: Long, note: String = "") {
+        val ctx   = getApplication<Application>()
+        val entry = InsulinEntry(units = units, type = type, timestampMs = timestampMs, note = note)
+        val updated = InsulinManager.add(ctx, entry)
+        _insulinEntries.postValue(updated)
+    }
+
+    fun deleteInsulin(id: String) {
+        val ctx = getApplication<Application>()
+        val updated = InsulinManager.delete(ctx, id)
+        _insulinEntries.postValue(updated)
+    }
+
+    // ── Glucose ───────────────────────────────────────────────────────────────
+
     private var refreshJob: Job? = null
 
     fun setChartHours(hours: Int) {
@@ -64,14 +93,9 @@ class GlucoseViewModel(app: Application) : AndroidViewModel(app) {
             AuthMode.OAUTH -> CredentialsManager.hasClientCredentials(ctx)
         }
 
-        if (!credentialsReady) {
-            _uiState.postValue(UiState.NoCredentials)
-            return
-        }
-
+        if (!credentialsReady) { _uiState.postValue(UiState.NoCredentials); return }
         if (mode == AuthMode.OAUTH && !CredentialsManager.isOAuthConnected(ctx)) {
-            _uiState.postValue(UiState.NotConnected)
-            return
+            _uiState.postValue(UiState.NotConnected); return
         }
 
         _uiState.postValue(UiState.Loading)
