@@ -37,8 +37,14 @@ class GlucoseViewModel(app: Application) : AndroidViewModel(app) {
     private val _insulinEntries = MutableLiveData<List<InsulinEntry>>(emptyList())
     val insulinEntries: LiveData<List<InsulinEntry>> = _insulinEntries
 
+    // ── Food ──────────────────────────────────────────────────────────────────
+
+    private val _foodEntries = MutableLiveData<List<FoodEntry>>(emptyList())
+    val foodEntries: LiveData<List<FoodEntry>> = _foodEntries
+
     init {
         loadInsulin()
+        loadFood()
     }
 
     private fun loadInsulin() {
@@ -57,6 +63,28 @@ class GlucoseViewModel(app: Application) : AndroidViewModel(app) {
         val ctx = getApplication<Application>()
         val updated = InsulinManager.delete(ctx, id)
         _insulinEntries.postValue(updated)
+    }
+
+    private fun loadFood() {
+        val ctx = getApplication<Application>()
+        _foodEntries.postValue(FoodManager.load(ctx))
+    }
+
+    fun addFood(name: String, carbs: Double, calories: Int, mealType: MealType,
+                timestampMs: Long, note: String = "") {
+        val ctx = getApplication<Application>()
+        val entry = FoodEntry(
+            name = name, carbs = carbs, calories = calories,
+            mealType = mealType, timestampMs = timestampMs, note = note
+        )
+        val updated = FoodManager.add(ctx, entry)
+        _foodEntries.postValue(updated)
+    }
+
+    fun deleteFood(id: String) {
+        val ctx = getApplication<Application>()
+        val updated = FoodManager.delete(ctx, id)
+        _foodEntries.postValue(updated)
     }
 
     // ── Glucose ───────────────────────────────────────────────────────────────
@@ -102,6 +130,7 @@ class GlucoseViewModel(app: Application) : AndroidViewModel(app) {
         try {
             val hours    = _chartHours.value ?: CredentialsManager.getChartHours(ctx)
             val readings = repository.fetchReadings(hours)
+            GlucoseLog.append(ctx, readings)   // persist for report export
             _uiState.postValue(UiState.Success(readings))
             _lastUpdated.postValue(System.currentTimeMillis())
         } catch (e: Exception) {

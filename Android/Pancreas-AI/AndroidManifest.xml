@@ -30,11 +30,20 @@
             android:label="Settings"
             android:parentActivityName=".MainActivity" />
 
-        <!-- In-app WebView that intercepts https://localhost/callback -->
         <activity
             android:name=".OAuthWebViewActivity"
             android:exported="false"
             android:label="Connect to Dexcom" />
+
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_provider_paths" />
+        </provider>
 
     </application>
 

@@ -316,6 +316,75 @@
 
             </androidx.cardview.widget.CardView>
 
+
+            <!-- Food Log Card -->
+            <androidx.cardview.widget.CardView
+                android:id="@+id/cardFood"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                app:cardBackgroundColor="@color/bg_surface"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="4dp"
+                android:visibility="gone">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <!-- Header row -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="12dp">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="FOOD LOG"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="12sp"
+                            android:textStyle="bold"
+                            android:letterSpacing="0.12" />
+
+                        <TextView
+                            android:id="@+id/tvTotalCarbs"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textColor="#4CAF50"
+                            android:textSize="13sp"
+                            android:textStyle="bold" />
+
+                    </LinearLayout>
+
+                    <!-- Food list container -->
+                    <LinearLayout
+                        android:id="@+id/foodListContainer"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical" />
+
+                    <!-- Empty state -->
+                    <TextView
+                        android:id="@+id/tvNoFood"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="No meals logged yet. Tap + to add."
+                        android:textColor="@color/text_secondary"
+                        android:textSize="13sp"
+                        android:gravity="center"
+                        android:padding="12dp"
+                        android:visibility="gone" />
+
+                </LinearLayout>
+
+            </androidx.cardview.widget.CardView>
+
             <!-- Stats Card -->
             <androidx.cardview.widget.CardView
                 android:id="@+id/cardStatus"
@@ -453,6 +522,17 @@
         android:orientation="vertical"
         android:layout_margin="16dp"
         android:gravity="end">
+
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/fabFood"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            app:backgroundTint="#2E7D32"
+            app:tint="#FFFFFF"
+            android:contentDescription="Log Food"
+            app:srcCompat="@android:drawable/ic_menu_add"
+            app:fabSize="mini" />
 
         <com.google.android.material.floatingactionbutton.FloatingActionButton
             android:id="@+id/fabInsulin"

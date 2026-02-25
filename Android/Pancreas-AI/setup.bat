@@ -383,6 +383,8 @@ for %%F in (
     GlucoseRepository.kt GlucoseViewModel.kt MainActivity.kt
     SettingsActivity.kt OAuthWebViewActivity.kt BootReceiver.kt
     InsulinEntry.kt
+    FoodEntry.kt
+    ReportExporter.kt
 ) do (
     if exist "%BAT_DIR%%%F" (
         copy /Y "%BAT_DIR%%%F" "%PKG%\%%F" >nul
@@ -403,6 +405,8 @@ for %%F in (colors.xml themes.xml strings.xml) do (
     if exist "%BAT_DIR%res\values\%%F" ( copy /Y "%BAT_DIR%res\values\%%F" "%RES%\values\%%F" >nul & echo    [OK] values\%%F ) else echo    [MISSING] res\values\%%F
 )
 if exist "%BAT_DIR%res\menu\main_menu.xml" ( copy /Y "%BAT_DIR%res\menu\main_menu.xml" "%RES%\menu\main_menu.xml" >nul & echo    [OK] menu\main_menu.xml ) else echo    [MISSING] res\menu\main_menu.xml
+if not exist "%RES%\xml" mkdir "%RES%\xml"
+if exist "%BAT_DIR%res\xml\file_provider_paths.xml" ( copy /Y "%BAT_DIR%res\xml\file_provider_paths.xml" "%RES%\xml\file_provider_paths.xml" >nul & echo    [OK] xml\file_provider_paths.xml ) else echo    [MISSING] res\xml\file_provider_paths.xml
 for %%F in (bg_result.xml ic_launcher.xml) do (
     if exist "%BAT_DIR%res\drawable\%%F" ( copy /Y "%BAT_DIR%res\drawable\%%F" "%RES%\drawable\%%F" >nul & echo    [OK] drawable\%%F ) else echo    [MISSING] res\drawable\%%F
 )
