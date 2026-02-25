@@ -34,6 +34,29 @@ object CredentialsManager {
     private const val KEY_HOURS        = "chart_hours"
 
     private fun prefs(ctx: Context): SharedPreferences {
+        // EncryptedSharedPreferences can throw on reinstall/upgrade if the Keystore
+        // entry no longer matches the stored prefs file. We delete and recreate on
+        // any failure so the app always opens rather than crashing at startup.
+        return try {
+            createEncryptedPrefs(ctx)
+        } catch (e: Exception) {
+            android.util.Log.w("CredentialsManager",
+                "EncryptedSharedPreferences failed (${e.javaClass.simpleName}), wiping and recreating")
+            // Delete corrupt prefs file so a fresh one is created below
+            ctx.deleteSharedPreferences(PREFS_FILE)
+            // Also try clearing the Keystore entry (best-effort)
+            try {
+                val ks = java.security.KeyStore.getInstance("AndroidKeyStore")
+                ks.load(null)
+                if (ks.containsAlias("_androidx_security_master_key")) {
+                    ks.deleteEntry("_androidx_security_master_key")
+                }
+            } catch (_: Exception) {}
+            createEncryptedPrefs(ctx)
+        }
+    }
+
+    private fun createEncryptedPrefs(ctx: Context): SharedPreferences {
         val masterKey = MasterKey.Builder(ctx)
             .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
             .build()
