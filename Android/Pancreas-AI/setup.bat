@@ -385,6 +385,8 @@ for %%F in (
     InsulinEntry.kt
     FoodEntry.kt
     ReportExporter.kt
+    InsightsAnalyzer.kt
+    InsightsActivity.kt
 ) do (
     if exist "%BAT_DIR%%%F" (
         copy /Y "%BAT_DIR%%%F" "%PKG%\%%F" >nul

@@ -9,15 +9,21 @@
         app:showAsAction="ifRoom" />
 
     <item
+        android:id="@+id/action_insights"
+        android:title="Insights"
+        android:icon="@android:drawable/ic_menu_info_details"
+        app:showAsAction="ifRoom" />
+
+    <item
         android:id="@+id/action_export"
         android:title="Export Report"
         android:icon="@android:drawable/ic_menu_share"
-        app:showAsAction="ifRoom" />
+        app:showAsAction="never" />
 
     <item
         android:id="@+id/action_settings"
         android:title="Settings"
         android:icon="@android:drawable/ic_menu_preferences"
-        app:showAsAction="ifRoom" />
+        app:showAsAction="never" />
 
 </menu>

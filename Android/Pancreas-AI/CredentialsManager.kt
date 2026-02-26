@@ -29,6 +29,7 @@ object CredentialsManager {
     private const val KEY_TOKEN_EXP    = "token_expires_at"
     // Common
     private const val KEY_AUTH_MODE    = "auth_mode"
+    private const val KEY_CLAUDE_KEY    = "claude_api_key"
     private const val KEY_DEVICE_TYPE  = "device_type"
     private const val KEY_INTERVAL     = "refresh_interval"
     private const val KEY_HOURS        = "chart_hours"
@@ -171,6 +172,13 @@ object CredentialsManager {
         prefs(ctx).edit().putInt(KEY_HOURS, hours).apply()
 
     // ─── OAuth Auth URL ───────────────────────────────────────────────────────
+
+    // ─── Claude API key ───────────────────────────────────────────────────────
+
+    fun getClaudeApiKey(ctx: Context)  = prefs(ctx).getString(KEY_CLAUDE_KEY, "") ?: ""
+    fun hasClaudeApiKey(ctx: Context)  = getClaudeApiKey(ctx).isNotBlank()
+    fun saveClaudeApiKey(ctx: Context, key: String) =
+        prefs(ctx).edit().putString(KEY_CLAUDE_KEY, key.trim()).apply()
 
     fun buildAuthUrl(ctx: Context): String {
         val base = if (useSandbox(ctx)) DEXCOM_BASE_SANDBOX else DEXCOM_BASE_PROD

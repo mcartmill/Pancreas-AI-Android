@@ -114,6 +114,21 @@ class SettingsActivity : AppCompatActivity() {
 
         binding.btnDiagnose.setOnClickListener { runDiagnostics() }
 
+        // Claude API key
+        binding.etClaudeKey.setText(CredentialsManager.getClaudeApiKey(this))
+        binding.btnSaveClaudeKey.setOnClickListener {
+            val key = binding.etClaudeKey.text.toString().trim()
+            CredentialsManager.saveClaudeApiKey(this, key)
+            binding.tvClaudeKeyStatus.apply {
+                visibility = android.view.View.VISIBLE
+                if (key.isNotBlank()) {
+                    text = "✓ API key saved"; setTextColor(android.graphics.Color.parseColor("#4CAF50"))
+                } else {
+                    text = "API key cleared"; setTextColor(android.graphics.Color.parseColor("#6A8499"))
+                }
+            }
+        }
+
         // Device type
         binding.rgDeviceType.setOnCheckedChangeListener { _, checkedId ->
             val type = if (checkedId == R.id.rbG6) DeviceType.G6 else DeviceType.G7

@@ -89,14 +89,20 @@ class GlucoseRepository(private val ctx: Context) {
     private fun isValidSession(sid: String) =
         sid.isNotBlank() && !sid.equals("null", ignoreCase = true) && sid != NULL_UUID
 
-    private fun nameLoginJson(user: String, pass: String, appId: String): String {
-        val u = user.replace("\"", "\\\""); val p = pass.replace("\"", "\\\"")
-        return "{\"accountName\":\"$u\",\"password\":\"$p\",\"applicationId\":\"$appId\"}"
-    }
-    private fun idLoginJson(accountId: String, pass: String, appId: String): String {
-        val p = pass.replace("\"", "\\\"")
-        return "{\"accountId\":\"$accountId\",\"password\":\"$p\",\"applicationId\":\"$appId\"}"
-    }
+
+    private fun nameLoginJson(user: String, pass: String, appId: String): String =
+        org.json.JSONObject().apply {
+            put("accountName", user)
+            put("password", pass)
+            put("applicationId", appId)
+        }.toString()
+
+    private fun idLoginJson(accountId: String, pass: String, appId: String): String =
+        org.json.JSONObject().apply {
+            put("accountId", accountId)
+            put("password", pass)
+            put("applicationId", appId)
+        }.toString()
 
     /** Flow 1: LoginPublisherAccountByName — legacy username accounts */
     private suspend fun tryLoginByName(user: String, pass: String, appId: String): String? {

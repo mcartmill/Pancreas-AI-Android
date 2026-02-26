@@ -91,6 +91,7 @@ class MainActivity : AppCompatActivity() {
         R.id.action_settings -> { startActivity(Intent(this, SettingsActivity::class.java)); true }
         R.id.action_refresh  -> { viewModel.refresh(); true }
         R.id.action_export   -> { showExportDialog(); true }
+        R.id.action_insights -> { startActivity(Intent(this, InsightsActivity::class.java)); true }
         else                 -> super.onOptionsItemSelected(item)
     }
 

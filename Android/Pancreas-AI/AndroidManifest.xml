@@ -35,6 +35,12 @@
             android:exported="false"
             android:label="Connect to Dexcom" />
 
+        <activity
+            android:name=".InsightsActivity"
+            android:exported="false"
+            android:label="Insights"
+            android:parentActivityName=".MainActivity" />
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"
