@@ -428,9 +428,16 @@ class MainActivity : AppCompatActivity() {
                 textSize = 11f; setTextColor(Color.parseColor("#6A8499"))
             })
             row.addView(dot); row.addView(info)
+            // Edit button
+            row.addView(TextView(this).apply {
+                text = "✎"; textSize = 16f; setTextColor(Color.parseColor("#00BCD4"))
+                setPadding(20, 0, 4, 0)
+                setOnClickListener { showLogInsulinDialog(existing = dose) }
+            })
+            // Delete button
             row.addView(TextView(this).apply {
                 text = "✕"; textSize = 14f; setTextColor(Color.parseColor("#546E7A"))
-                setPadding(24, 0, 0, 0); setOnClickListener { confirmDeleteInsulin(dose) }
+                setPadding(16, 0, 0, 0); setOnClickListener { confirmDeleteInsulin(dose) }
             })
             binding.insulinListContainer.addView(row)
             if (dose != recent.last()) binding.insulinListContainer.addView(makeDivider())
@@ -496,9 +503,16 @@ class MainActivity : AppCompatActivity() {
                 textSize = 11f; setTextColor(Color.parseColor("#6A8499"))
             })
             row.addView(dot); row.addView(info)
+            // Edit button
+            row.addView(TextView(this).apply {
+                text = "✎"; textSize = 16f; setTextColor(Color.parseColor("#00BCD4"))
+                setPadding(20, 0, 4, 0)
+                setOnClickListener { showLogFoodDialog(existing = meal) }
+            })
+            // Delete button
             row.addView(TextView(this).apply {
                 text = "✕"; textSize = 14f; setTextColor(Color.parseColor("#546E7A"))
-                setPadding(24, 0, 0, 0); setOnClickListener { confirmDeleteFood(meal) }
+                setPadding(16, 0, 0, 0); setOnClickListener { confirmDeleteFood(meal) }
             })
             binding.foodListContainer.addView(row)
             if (meal != recent.last()) binding.foodListContainer.addView(makeDivider())
@@ -543,43 +557,68 @@ class MainActivity : AppCompatActivity() {
         ).show()
     }
 
-    // ── Log Insulin Dialog ────────────────────────────────────────────────────
+    // ── Log / Edit Insulin Dialog ─────────────────────────────────────────────
 
-    private fun showLogInsulinDialog() {
-        val doseTime = Calendar.getInstance()
+    private fun showLogInsulinDialog(existing: InsulinEntry? = null) {
+        val isEditing = existing != null
+        val doseTime  = Calendar.getInstance().also { cal ->
+            existing?.let { cal.timeInMillis = it.timestampMs }
+        }
 
-        val container = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(64, 32, 64, 16) }
+        val container = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL; setPadding(64, 32, 64, 16)
+        }
 
         val unitsInput = EditText(this).apply {
             hint = "Units (e.g. 12.95)"
-            inputType = android.text.InputType.TYPE_CLASS_NUMBER or android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL
-            setTextColor(Color.parseColor("#E0E8F0")); setHintTextColor(Color.parseColor("#546E7A"))
+            inputType = android.text.InputType.TYPE_CLASS_NUMBER or
+                        android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL
+            setTextColor(Color.parseColor("#E0E8F0"))
+            setHintTextColor(Color.parseColor("#546E7A"))
+            existing?.let { setText("%.2f".format(it.units)) }
         }
         val typeSpinner = Spinner(this).apply {
             adapter = ArrayAdapter(this@MainActivity,
-                android.R.layout.simple_spinner_dropdown_item, InsulinType.values().map { it.label })
+                android.R.layout.simple_spinner_dropdown_item,
+                InsulinType.values().map { it.label })
+            existing?.let { setSelection(InsulinType.values().indexOf(it.type)) }
         }
         val timeBtn = com.google.android.material.button.MaterialButton(this).apply {
             text = dateFmt.format(doseTime.time)
-            setTextColor(Color.parseColor("#E0E8F0")); setBackgroundColor(Color.parseColor("#1A2A3A"))
-            setOnClickListener { makeTimePicker(doseTime, this); }
+            setTextColor(Color.parseColor("#E0E8F0"))
+            setBackgroundColor(Color.parseColor("#1A2A3A"))
+            setOnClickListener { makeTimePicker(doseTime, this) }
         }
         val noteInput = EditText(this).apply {
-            hint = "Note (optional)"; setTextColor(Color.parseColor("#E0E8F0")); setHintTextColor(Color.parseColor("#546E7A"))
+            hint = "Note (optional)"
+            setTextColor(Color.parseColor("#E0E8F0"))
+            setHintTextColor(Color.parseColor("#546E7A"))
+            existing?.let { setText(it.note) }
         }
 
-        container.addView(label("Units")); container.addView(unitsInput)
-        container.addView(label("Type")); container.addView(typeSpinner)
-        container.addView(label("Time")); container.addView(timeBtn)
+        container.addView(label("Units"));           container.addView(unitsInput)
+        container.addView(label("Type"));            container.addView(typeSpinner)
+        container.addView(label("Time"));            container.addView(timeBtn)
         container.addView(label("Note (optional)")); container.addView(noteInput)
 
-        AlertDialog.Builder(this).setTitle("Log Insulin Dose").setView(container)
-            .setPositiveButton("Save") { _, _ ->
+        AlertDialog.Builder(this)
+            .setTitle(if (isEditing) "Edit Insulin Dose" else "Log Insulin Dose")
+            .setView(container)
+            .setPositiveButton(if (isEditing) "Save Changes" else "Save") { _, _ ->
                 val units = unitsInput.text.toString().trim().toDoubleOrNull()
                 if (units != null && units > 0) {
                     val type = InsulinType.values()[typeSpinner.selectedItemPosition]
-                    viewModel.addInsulin(units, type, doseTime.timeInMillis, noteInput.text.toString().trim())
-                    Toast.makeText(this, "%.2f u logged".format(units), Toast.LENGTH_SHORT).show()
+                    val note = noteInput.text.toString().trim()
+                    if (isEditing) {
+                        viewModel.updateInsulin(existing!!.copy(
+                            units = units, type = type,
+                            timestampMs = doseTime.timeInMillis, note = note
+                        ))
+                        Toast.makeText(this, "Dose updated", Toast.LENGTH_SHORT).show()
+                    } else {
+                        viewModel.addInsulin(units, type, doseTime.timeInMillis, note)
+                        Toast.makeText(this, "%.2f u logged".format(units), Toast.LENGTH_SHORT).show()
+                    }
                 } else {
                     Toast.makeText(this, "Enter a valid number of units", Toast.LENGTH_SHORT).show()
                 }
@@ -587,58 +626,86 @@ class MainActivity : AppCompatActivity() {
             .setNegativeButton("Cancel", null).show()
     }
 
-    // ── Log Food Dialog ───────────────────────────────────────────────────────
+    // ── Log / Edit Food Dialog ────────────────────────────────────────────────
 
-    private fun showLogFoodDialog() {
-        val mealTime = Calendar.getInstance()
+    private fun showLogFoodDialog(existing: FoodEntry? = null) {
+        val isEditing = existing != null
+        val mealTime  = Calendar.getInstance().also { cal ->
+            existing?.let { cal.timeInMillis = it.timestampMs }
+        }
 
-        val container = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(64, 32, 64, 16) }
+        val container = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL; setPadding(64, 32, 64, 16)
+        }
 
         val nameInput = EditText(this).apply {
             hint = "Food name (e.g. Oatmeal)"
-            setTextColor(Color.parseColor("#E0E8F0")); setHintTextColor(Color.parseColor("#546E7A"))
+            setTextColor(Color.parseColor("#E0E8F0"))
+            setHintTextColor(Color.parseColor("#546E7A"))
+            existing?.let { setText(it.name) }
         }
         val carbsInput = EditText(this).apply {
             hint = "Carbs in grams (e.g. 45)"
-            inputType = android.text.InputType.TYPE_CLASS_NUMBER or android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL
-            setTextColor(Color.parseColor("#E0E8F0")); setHintTextColor(Color.parseColor("#546E7A"))
+            inputType = android.text.InputType.TYPE_CLASS_NUMBER or
+                        android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL
+            setTextColor(Color.parseColor("#E0E8F0"))
+            setHintTextColor(Color.parseColor("#546E7A"))
+            existing?.let { setText("%.0f".format(it.carbs)) }
         }
         val calInput = EditText(this).apply {
             hint = "Calories (optional)"
             inputType = android.text.InputType.TYPE_CLASS_NUMBER
-            setTextColor(Color.parseColor("#E0E8F0")); setHintTextColor(Color.parseColor("#546E7A"))
+            setTextColor(Color.parseColor("#E0E8F0"))
+            setHintTextColor(Color.parseColor("#546E7A"))
+            existing?.let { if (it.calories > 0) setText(it.calories.toString()) }
         }
         val typeSpinner = Spinner(this).apply {
             adapter = ArrayAdapter(this@MainActivity,
-                android.R.layout.simple_spinner_dropdown_item, MealType.values().map { it.label })
+                android.R.layout.simple_spinner_dropdown_item,
+                MealType.values().map { it.label })
+            existing?.let { setSelection(MealType.values().indexOf(it.mealType)) }
         }
         val timeBtn = com.google.android.material.button.MaterialButton(this).apply {
             text = dateFmt.format(mealTime.time)
-            setTextColor(Color.parseColor("#E0E8F0")); setBackgroundColor(Color.parseColor("#1A2A3A"))
+            setTextColor(Color.parseColor("#E0E8F0"))
+            setBackgroundColor(Color.parseColor("#1A2A3A"))
             setOnClickListener { makeTimePicker(mealTime, this) }
         }
         val noteInput = EditText(this).apply {
-            hint = "Note (optional)"; setTextColor(Color.parseColor("#E0E8F0")); setHintTextColor(Color.parseColor("#546E7A"))
+            hint = "Note (optional)"
+            setTextColor(Color.parseColor("#E0E8F0"))
+            setHintTextColor(Color.parseColor("#546E7A"))
+            existing?.let { setText(it.note) }
         }
 
-        container.addView(label("Food Name")); container.addView(nameInput)
-        container.addView(label("Carbohydrates (g)")); container.addView(carbsInput)
+        container.addView(label("Food Name"));           container.addView(nameInput)
+        container.addView(label("Carbohydrates (g)"));   container.addView(carbsInput)
         container.addView(label("Calories (optional)")); container.addView(calInput)
-        container.addView(label("Meal Type")); container.addView(typeSpinner)
-        container.addView(label("Time")); container.addView(timeBtn)
-        container.addView(label("Note (optional)")); container.addView(noteInput)
+        container.addView(label("Meal Type"));           container.addView(typeSpinner)
+        container.addView(label("Time"));                container.addView(timeBtn)
+        container.addView(label("Note (optional)"));     container.addView(noteInput)
 
-        AlertDialog.Builder(this).setTitle("Log Meal / Food").setView(container)
-            .setPositiveButton("Save") { _, _ ->
+        AlertDialog.Builder(this)
+            .setTitle(if (isEditing) "Edit Meal" else "Log Meal / Food")
+            .setView(container)
+            .setPositiveButton(if (isEditing) "Save Changes" else "Save") { _, _ ->
                 val carbs = carbsInput.text.toString().trim().toDoubleOrNull()
                 if (carbs != null && carbs >= 0) {
-                    val name  = nameInput.text.toString().trim()
-                    val cals  = calInput.text.toString().trim().toIntOrNull() ?: 0
-                    val type  = MealType.values()[typeSpinner.selectedItemPosition]
-                    val note  = noteInput.text.toString().trim()
-                    viewModel.addFood(name, carbs, cals, type, mealTime.timeInMillis, note)
-                    val display = name.ifBlank { type.label }
-                    Toast.makeText(this, "$display logged (%.0fg carbs)".format(carbs), Toast.LENGTH_SHORT).show()
+                    val name = nameInput.text.toString().trim()
+                    val cals = calInput.text.toString().trim().toIntOrNull() ?: 0
+                    val type = MealType.values()[typeSpinner.selectedItemPosition]
+                    val note = noteInput.text.toString().trim()
+                    if (isEditing) {
+                        viewModel.updateFood(existing!!.copy(
+                            name = name, carbs = carbs, calories = cals,
+                            mealType = type, timestampMs = mealTime.timeInMillis, note = note
+                        ))
+                        Toast.makeText(this, "Meal updated", Toast.LENGTH_SHORT).show()
+                    } else {
+                        viewModel.addFood(name, carbs, cals, type, mealTime.timeInMillis, note)
+                        val display = name.ifBlank { type.label }
+                        Toast.makeText(this, "$display logged (%.0fg carbs)".format(carbs), Toast.LENGTH_SHORT).show()
+                    }
                 } else {
                     Toast.makeText(this, "Enter a valid carb count", Toast.LENGTH_SHORT).show()
                 }

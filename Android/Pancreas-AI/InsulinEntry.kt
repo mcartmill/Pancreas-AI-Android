@@ -54,6 +54,13 @@ object InsulinManager {
         return updated
     }
 
+    fun update(ctx: Context, entry: InsulinEntry): List<InsulinEntry> {
+        val updated = load(ctx).map { if (it.id == entry.id) entry else it }
+            .sortedByDescending { it.timestampMs }
+        save(ctx, updated)
+        return updated
+    }
+
     /** Returns entries within the given time window, newest first */
     fun forWindow(ctx: Context, fromMs: Long, toMs: Long): List<InsulinEntry> =
         load(ctx).filter { it.timestampMs in fromMs..toMs }

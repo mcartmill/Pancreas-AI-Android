@@ -212,5 +212,37 @@ Temporary plain file (shared)
 
 PancreasAI is a personal project and is not a certified HIPAA Business Associate. This update implements encryption at rest as a best-practice technical safeguard. It does not constitute a formal compliance certification.
 
+PancreasAI — Release Notes
+
+Version 1.0.4
+
+February 28, 2026
+
+
+
+🐛 Bug Fixes
+
+Fixed intermittent "AccountPasswordInvalid" error on refresh The app was performing a full Dexcom re-authentication on every single data refresh. Dexcom occasionally returns a transient server error during authentication which the app was misreading as a genuine password failure — showing a scary red error card even when your credentials were perfectly fine. The app now caches your session and reuses it across refreshes, only re-authenticating when the session actually expires. The error should no longer appear for users whose credentials are correct.
+
+Improved Google SSO account detection and error messaging When Dexcom explicitly rejects a password (rather than a transient server error), the app now detects this immediately and stops retrying. Gmail and Google-mail accounts receive a specific explanation explaining that Sign in with Google accounts require a native Dexcom password to be set via the Forgot Password flow, along with step-by-step instructions to fix it. The Diagnostics tool also now flags this inline with a ⚠️ warning so it's immediately clear what the issue is.
+
+
+
+✨ New Features
+
+Editable insulin log entries Insulin doses can now be edited after saving. Each entry in the Insulin Log shows a new cyan ✎ button alongside the existing delete button. Tapping it opens the log dialog pre-filled with all the original values — units, type, time, and note — ready to correct. Saving updates the entry in place, preserving its position on the glucose chart.
+
+Editable food / meal log entries Meals can now be edited after saving. Same as insulin — tap ✎ on any food entry to open the edit dialog with all fields pre-filled: food name, carbs, calories, meal type, time, and note. Updates are reflected immediately on the chart and in the 24-hour totals.
+
+
+
+What's Unchanged
+
+All glucose data, insulin logs, food logs, and settings carry over automatically — no action needed on update. The session fix is transparent; the app will use a fresh login on first launch after updating, then cache it going forward.
+
+
+
+PancreasAI is a personal project and is not a medical device. Always consult your healthcare team before making changes to your insulin regimen.
+
 
 

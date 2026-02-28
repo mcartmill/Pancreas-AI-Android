@@ -59,6 +59,13 @@ object FoodManager {
         return updated
     }
 
+    fun update(ctx: Context, entry: FoodEntry): List<FoodEntry> {
+        val updated = load(ctx).map { if (it.id == entry.id) entry else it }
+            .sortedByDescending { it.timestampMs }
+        save(ctx, updated)
+        return updated
+    }
+
     fun forWindow(ctx: Context, fromMs: Long, toMs: Long): List<FoodEntry> =
         load(ctx).filter { it.timestampMs in fromMs..toMs }
 

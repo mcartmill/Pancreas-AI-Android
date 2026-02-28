@@ -59,6 +59,12 @@ class GlucoseViewModel(app: Application) : AndroidViewModel(app) {
         _insulinEntries.postValue(updated)
     }
 
+    fun updateInsulin(entry: InsulinEntry) {
+        val ctx = getApplication<Application>()
+        val updated = InsulinManager.update(ctx, entry)
+        _insulinEntries.postValue(updated)
+    }
+
     fun deleteInsulin(id: String) {
         val ctx = getApplication<Application>()
         val updated = InsulinManager.delete(ctx, id)
@@ -78,6 +84,12 @@ class GlucoseViewModel(app: Application) : AndroidViewModel(app) {
             mealType = mealType, timestampMs = timestampMs, note = note
         )
         val updated = FoodManager.add(ctx, entry)
+        _foodEntries.postValue(updated)
+    }
+
+    fun updateFood(entry: FoodEntry) {
+        val ctx = getApplication<Application>()
+        val updated = FoodManager.update(ctx, entry)
         _foodEntries.postValue(updated)
     }
 

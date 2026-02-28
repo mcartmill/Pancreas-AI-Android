@@ -209,8 +209,16 @@ class GlucoseRepository(private val ctx: Context) {
         if (!CredentialsManager.hasShareCredentials(ctx))
             throw Exception("Enter your Dexcom username and password in Settings.")
 
-        CredentialsManager.clearShareSession(ctx)
-        val sessionId = shareLogin()
+        // Reuse a cached session ID if we have one — only login when necessary.
+        // Dexcom Share sessions are valid for several hours; forcing a re-login
+        // on every refresh hits the auth endpoint unnecessarily and causes
+        // intermittent AccountPasswordInvalid errors if Dexcom throttles or
+        // returns a transient 500.
+        val sessionId = CredentialsManager.getShareSessionId(ctx)?.takeIf { it.isNotBlank() }
+            ?: run {
+                Log.d(TAG, "No cached session — performing fresh login")
+                shareLogin()
+            }
 
         val minutes  = minOf(hours * 60, 1440)
         val maxCount = maxOf(minutes / 5 + 2, 288)
@@ -220,6 +228,24 @@ class GlucoseRepository(private val ctx: Context) {
         val (code, body) = shareGet(path)
         Log.d(TAG, "Share readings HTTP $code: ${body.take(300)}")
 
+        // Session expired (Dexcom returns 500 with SessionNotValid / SessionIdNotFound)
+        // — clear it and retry once with a fresh login.
+        if (code == 500 && (body.contains("SessionNotValid", ignoreCase = true) ||
+                             body.contains("SessionIdNotFound", ignoreCase = true))) {
+            Log.d(TAG, "Session expired — clearing and re-logging in")
+            CredentialsManager.clearShareSession(ctx)
+            val freshSession = shareLogin()
+            val retryPath = "Publisher/ReadPublisherLatestGlucoseValues" +
+                "?sessionId=$freshSession&minutes=$minutes&maxCount=$maxCount"
+            val (retryCode, retryBody) = shareGet(retryPath)
+            Log.d(TAG, "Share retry HTTP $retryCode: ${retryBody.take(300)}")
+            return parseShareReadings(retryCode, retryBody)
+        }
+
+        return parseShareReadings(code, body)
+    }
+
+    private fun parseShareReadings(code: Int, body: String): List<EgvReading> {
         if (code != 200) throw Exception("Share API error $code: ${body.take(300)}")
 
         val trimmed = body.trim()
