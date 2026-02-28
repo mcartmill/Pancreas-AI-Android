@@ -34,6 +34,24 @@ object CredentialsManager {
     private const val KEY_INTERVAL     = "refresh_interval"
     private const val KEY_HOURS        = "chart_hours"
 
+    // Personal info
+    private const val KEY_HEIGHT_IN    = "personal_height_in"
+    private const val KEY_WEIGHT_LB    = "personal_weight_lb"
+    private const val KEY_GENDER       = "personal_gender"
+    private const val KEY_AGE          = "personal_age"
+
+    // Glucose thresholds
+    private const val KEY_GLUCOSE_HIGH = "glucose_threshold_high"
+    private const val KEY_GLUCOSE_LOW  = "glucose_threshold_low"
+
+    // Notifications
+    private const val KEY_NOTIF_ENABLED   = "notif_enabled"
+    private const val KEY_NOTIF_HIGH      = "notif_predict_high"
+    private const val KEY_NOTIF_LOW       = "notif_predict_low"
+    private const val KEY_NOTIF_MINUTES   = "notif_project_minutes"
+    private const val KEY_LAST_HIGH_NOTIF = "notif_last_high_ms"
+    private const val KEY_LAST_LOW_NOTIF  = "notif_last_low_ms"
+
     private fun prefs(ctx: Context): SharedPreferences {
         // EncryptedSharedPreferences can throw on reinstall/upgrade if the Keystore
         // entry no longer matches the stored prefs file. We delete and recreate on
@@ -179,6 +197,57 @@ object CredentialsManager {
     fun hasClaudeApiKey(ctx: Context)  = getClaudeApiKey(ctx).isNotBlank()
     fun saveClaudeApiKey(ctx: Context, key: String) =
         prefs(ctx).edit().putString(KEY_CLAUDE_KEY, key.trim()).apply()
+
+    // ─── Personal Info ────────────────────────────────────────────────────────
+
+    fun getHeightIn(ctx: Context)  = prefs(ctx).getFloat(KEY_HEIGHT_IN, 0f)
+    fun getWeightLb(ctx: Context)  = prefs(ctx).getFloat(KEY_WEIGHT_LB, 0f)
+    fun getGender(ctx: Context)    = prefs(ctx).getString(KEY_GENDER, "") ?: ""
+    fun getAge(ctx: Context)       = prefs(ctx).getInt(KEY_AGE, 0)
+
+    fun savePersonalInfo(ctx: Context, heightIn: Float, weightLb: Float, gender: String, age: Int) {
+        prefs(ctx).edit()
+            .putFloat(KEY_HEIGHT_IN, heightIn)
+            .putFloat(KEY_WEIGHT_LB, weightLb)
+            .putString(KEY_GENDER, gender)
+            .putInt(KEY_AGE, age)
+            .apply()
+    }
+
+    // ─── Glucose Thresholds ───────────────────────────────────────────────────
+
+    fun getGlucoseHigh(ctx: Context) = prefs(ctx).getInt(KEY_GLUCOSE_HIGH, 180)
+    fun getGlucoseLow(ctx: Context)  = prefs(ctx).getInt(KEY_GLUCOSE_LOW,   70)
+
+    fun saveGlucoseThresholds(ctx: Context, high: Int, low: Int) {
+        prefs(ctx).edit()
+            .putInt(KEY_GLUCOSE_HIGH, high)
+            .putInt(KEY_GLUCOSE_LOW, low)
+            .apply()
+    }
+
+    // ─── Notifications ────────────────────────────────────────────────────────
+
+    fun isNotificationsEnabled(ctx: Context)   = prefs(ctx).getBoolean(KEY_NOTIF_ENABLED, false)
+    fun isPredictHighEnabled(ctx: Context)      = prefs(ctx).getBoolean(KEY_NOTIF_HIGH, true)
+    fun isPredictLowEnabled(ctx: Context)       = prefs(ctx).getBoolean(KEY_NOTIF_LOW, true)
+    fun getProjectionMinutes(ctx: Context)      = prefs(ctx).getInt(KEY_NOTIF_MINUTES, 20)
+
+    fun setNotificationsEnabled(ctx: Context, enabled: Boolean) =
+        prefs(ctx).edit().putBoolean(KEY_NOTIF_ENABLED, enabled).apply()
+    fun setPredictHighEnabled(ctx: Context, enabled: Boolean) =
+        prefs(ctx).edit().putBoolean(KEY_NOTIF_HIGH, enabled).apply()
+    fun setPredictLowEnabled(ctx: Context, enabled: Boolean) =
+        prefs(ctx).edit().putBoolean(KEY_NOTIF_LOW, enabled).apply()
+    fun setProjectionMinutes(ctx: Context, minutes: Int) =
+        prefs(ctx).edit().putInt(KEY_NOTIF_MINUTES, minutes).apply()
+
+    fun getLastHighNotifMs(ctx: Context) = prefs(ctx).getLong(KEY_LAST_HIGH_NOTIF, 0L)
+    fun getLastLowNotifMs(ctx: Context)  = prefs(ctx).getLong(KEY_LAST_LOW_NOTIF,  0L)
+    fun markHighNotifSent(ctx: Context)  =
+        prefs(ctx).edit().putLong(KEY_LAST_HIGH_NOTIF, System.currentTimeMillis()).apply()
+    fun markLowNotifSent(ctx: Context)   =
+        prefs(ctx).edit().putLong(KEY_LAST_LOW_NOTIF,  System.currentTimeMillis()).apply()
 
     fun buildAuthUrl(ctx: Context): String {
         val base = if (useSandbox(ctx)) DEXCOM_BASE_SANDBOX else DEXCOM_BASE_PROD

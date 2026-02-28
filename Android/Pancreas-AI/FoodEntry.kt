@@ -3,7 +3,6 @@ package com.pancreas.ai
 import android.content.Context
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
-import java.io.File
 import java.util.UUID
 
 enum class MealType(val label: String) {
@@ -30,11 +29,9 @@ object FoodManager {
     private const val FILE_NAME = "food_log.json"
     private val gson = Gson()
 
-    private fun file(ctx: Context) = File(ctx.filesDir, FILE_NAME)
-
     fun load(ctx: Context): List<FoodEntry> {
         return try {
-            val text = file(ctx).takeIf { it.exists() }?.readText() ?: return emptyList()
+            val text = SecureFileStore.read(ctx, FILE_NAME) ?: return emptyList()
             val type = object : TypeToken<List<FoodEntryJson>>() {}.type
             val raw: List<FoodEntryJson> = gson.fromJson(text, type) ?: emptyList()
             raw.map { it.toEntry() }
@@ -46,7 +43,7 @@ object FoodManager {
     fun save(ctx: Context, entries: List<FoodEntry>) {
         try {
             val json = gson.toJson(entries.map { FoodEntryJson.from(it) })
-            file(ctx).writeText(json)
+            SecureFileStore.write(ctx, FILE_NAME, json)
         } catch (_: Exception) {}
     }
 

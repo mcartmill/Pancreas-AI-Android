@@ -13,9 +13,10 @@ Initial Features:
 -Insulin timing suggestions - 2/25/2026 - added to build - currently testing
 -Charts - 2/25/2026 - creates export (multiple time range selections) with charts (full color)
 
-
-
-Future Features:
 -A1C predictions - 2/25/2026 - this is now estimated with the report export.
 -AI integrated for suggestions and pattern recognition - 2/25/2026 - added to build - currently testing
+
+-Full data encryption - 2/27/2026
+
+-adjustable notifications and thresholds - 2/27/2026
 

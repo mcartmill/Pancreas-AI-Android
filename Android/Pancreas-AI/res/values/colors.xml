@@ -12,6 +12,7 @@
     <!-- Dexcom brand -->
     <color name="dexcom_cyan">#00BCD4</color>
     <color name="dexcom_cyan_dim">#00838F</color>
+    <color name="dexcom_orange">#FF8800</color>
 
     <!-- Glucose status -->
     <color name="glucose_normal">#00E676</color>

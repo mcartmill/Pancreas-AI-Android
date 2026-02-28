@@ -529,32 +529,55 @@ class PostMealChartView @JvmOverloads constructor(
     private fun dp(v: Float) = v * density
 
     override fun onMeasure(ws: Int, hs: Int) =
-        setMeasuredDimension(MeasureSpec.getSize(ws), dp(120f).toInt())
+        setMeasuredDimension(MeasureSpec.getSize(ws), dp(160f).toInt())
 
     override fun onDraw(c: Canvas) {
         if (curves.isEmpty()) return
         val w = width.toFloat(); val h = height.toFloat()
-        val pad = dp(8f)
+        val padLeft = dp(36f)   // room for Y-axis labels
+        val padRight = dp(8f)
+        val padTop = dp(18f)    // room for legend
+        val padBottom = dp(18f) // room for X-axis labels
 
-        // Reference lines
-        val refPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.parseColor("#1E3448"); strokeWidth = 1f; style = Paint.Style.STROKE
+        val chartTop = padTop
+        val chartBottom = h - padBottom
+        val chartH = chartBottom - chartTop
+
+        val maxDelta = (curves.flatMap { listOf(it.peak - it.baselineGlucose) }.maxOrNull()?.toFloat() ?: 100f)
+            .coerceAtLeast(60f)
+        val scale = chartH / maxDelta
+
+        fun xAt(min: Int) = padLeft + (min.toFloat() / 180f) * (w - padLeft - padRight)
+        fun yAt(delta: Int) = chartBottom - delta * scale
+
+        // 1. Target zone FIRST (behind everything)
+        val zonePaint = Paint().apply {
+            color = Color.argb(50, 0, 180, 80); style = Paint.Style.FILL
         }
-        // 0 line (baseline)
-        val zeroY = h - pad
-        c.drawLine(pad, zeroY, w - pad, zeroY, refPaint)
+        c.drawRect(RectF(padLeft, yAt(40), w - padRight, chartBottom), zonePaint)
 
-        // Time points: 0, 30, 60, 90, 120, 150, 180 min
-        val timePoints = listOf(0, 30, 60, 90, 120, 150, 180)
-        val maxDelta = curves.flatMap { listOf(it.peak - it.baselineGlucose) }.maxOrNull()?.toFloat() ?: 100f
-        val scale = (h - pad * 2) / maxDelta.coerceAtLeast(60f)
+        // 2. Baseline reference line
+        val refPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color.parseColor("#2E4A60"); strokeWidth = dp(1f); style = Paint.Style.STROKE
+        }
+        c.drawLine(padLeft, chartBottom, w - padRight, chartBottom, refPaint)
 
-        fun xAt(min: Int) = pad + (min.toFloat() / 180f) * (w - pad * 2)
-        fun yAt(delta: Int) = zeroY - delta * scale
+        // 3. Y-axis grid lines + labels
+        val yLblPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color.parseColor("#6A8499"); textSize = dp(9f); textAlign = Paint.Align.RIGHT
+        }
+        val gridPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color.parseColor("#1E3448"); strokeWidth = dp(0.5f); style = Paint.Style.STROKE
+        }
+        listOf(0, 40, 80).filter { it <= maxDelta }.forEach { delta ->
+            val y = yAt(delta)
+            c.drawLine(padLeft, y, w - padRight, y, gridPaint)
+            c.drawText("+$delta", padLeft - dp(4f), y + dp(4f), yLblPaint)
+        }
 
-        // Individual curve lines (faint)
+        // 4. Individual curve lines (faint but visible)
         val faintPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.parseColor("#1A6A80"); strokeWidth = dp(1f)
+            color = Color.argb(120, 30, 120, 160); strokeWidth = dp(1.5f)
             style = Paint.Style.STROKE; strokeCap = Paint.Cap.ROUND
         }
         curves.forEach { curve ->
@@ -570,11 +593,10 @@ class PostMealChartView @JvmOverloads constructor(
             c.drawPath(path, faintPaint)
         }
 
-        // Average line (bold)
+        // 5. Average line (bold, drawn last so it's on top)
         val avgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.parseColor("#FF9800"); strokeWidth = dp(2.5f)
-            style = Paint.Style.STROKE; strokeCap = Paint.Cap.ROUND
-            strokeJoin = Paint.Join.ROUND
+            color = Color.parseColor("#FF9800"); strokeWidth = dp(3f)
+            style = Paint.Style.STROKE; strokeCap = Paint.Cap.ROUND; strokeJoin = Paint.Join.ROUND
         }
         val validAt60  = curves.filter { it.deltaAt60 > -500 }.map { it.deltaAt60 }
         val validAt120 = curves.filter { it.deltaAt120 > -500 }.map { it.deltaAt120 }
@@ -586,25 +608,19 @@ class PostMealChartView @JvmOverloads constructor(
         if (validAt180.isNotEmpty()) avgPath.lineTo(xAt(180), yAt(validAt180.average().toInt()))
         c.drawPath(avgPath, avgPaint)
 
-        // X-axis labels
-        val lblPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        // 6. X-axis labels
+        val xLblPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = Color.parseColor("#6A8499"); textSize = dp(9f); textAlign = Paint.Align.CENTER
         }
         listOf(0 to "meal", 60 to "60m", 120 to "120m", 180 to "180m").forEach { (min, lbl) ->
-            c.drawText(lbl, xAt(min), h, lblPaint)
+            c.drawText(lbl, xAt(min), h, xLblPaint)
         }
 
-        // Target zone (in-range shading above baseline — show +0 to +40 as acceptable)
-        val zonePaint = Paint().apply {
-            color = Color.parseColor("#0A4020"); style = Paint.Style.FILL
-        }
-        c.drawRect(RectF(pad, yAt(40), w - pad, zeroY), zonePaint)
-
-        // Legend
+        // 7. Legend (top-left)
         val legPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = Color.parseColor("#FF9800"); textSize = dp(9f)
         }
-        c.drawText("— avg rise", dp(10f), dp(14f), legPaint)
+        c.drawText("— avg rise", padLeft, dp(12f), legPaint)
     }
 }
 
@@ -618,33 +634,60 @@ class PostInsulinChartView @JvmOverloads constructor(
     private fun dp(v: Float) = v * density
 
     override fun onMeasure(ws: Int, hs: Int) =
-        setMeasuredDimension(MeasureSpec.getSize(ws), dp(120f).toInt())
+        setMeasuredDimension(MeasureSpec.getSize(ws), dp(160f).toInt())
 
     override fun onDraw(c: Canvas) {
         if (curves.isEmpty()) return
         val w = width.toFloat(); val h = height.toFloat()
-        val pad = dp(8f)
-        val topY = pad
+        val padLeft = dp(36f)
+        val padRight = dp(8f)
+        val padTop = dp(18f)
+        val padBottom = dp(18f)
 
-        val refPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.parseColor("#1E3448"); strokeWidth = 1f; style = Paint.Style.STROKE
+        val chartTop = padTop
+        val chartBottom = h - padBottom
+        val chartH = chartBottom - chartTop
+
+        val maxDrop = (curves.flatMap { listOf(it.baselineGlucose - it.nadir) }
+            .maxOrNull()?.toFloat() ?: 80f).coerceAtLeast(40f)
+        val scale = chartH / maxDrop
+
+        fun xAt(min: Int) = padLeft + (min.toFloat() / 240f) * (w - padLeft - padRight)
+        fun yAt(drop: Int) = chartTop + drop * scale
+
+        // 1. Safe drop zone (0–30 mg/dL drop, lightly shaded)
+        val zonePaint = Paint().apply {
+            color = Color.argb(40, 0, 188, 212); style = Paint.Style.FILL
         }
-        c.drawLine(pad, topY, w - pad, topY, refPaint)
+        c.drawRect(RectF(padLeft, chartTop, w - padRight, yAt(30)), zonePaint)
 
-        val maxDrop = curves.flatMap { listOf(it.baselineGlucose - it.nadir) }
-            .maxOrNull()?.toFloat() ?: 80f
-        val scale = (h - pad * 2) / maxDrop.coerceAtLeast(40f)
+        // 2. Baseline (top = where glucose starts, drops downward)
+        val refPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color.parseColor("#2E4A60"); strokeWidth = dp(1f); style = Paint.Style.STROKE
+        }
+        c.drawLine(padLeft, chartTop, w - padRight, chartTop, refPaint)
 
-        fun xAt(min: Int) = pad + (min.toFloat() / 240f) * (w - pad * 2)
-        fun yAt(drop: Int) = topY + drop * scale
+        // 3. Y-axis grid lines + labels (showing drops)
+        val yLblPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color.parseColor("#6A8499"); textSize = dp(9f); textAlign = Paint.Align.RIGHT
+        }
+        val gridPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color.parseColor("#1E3448"); strokeWidth = dp(0.5f); style = Paint.Style.STROKE
+        }
+        listOf(0, 30, 60).filter { it <= maxDrop }.forEach { drop ->
+            val y = yAt(drop)
+            c.drawLine(padLeft, y, w - padRight, y, gridPaint)
+            c.drawText("-$drop", padLeft - dp(4f), y + dp(4f), yLblPaint)
+        }
 
+        // 4. Individual curves (faint)
         val faintPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.parseColor("#0A3A5A"); strokeWidth = dp(1f)
+            color = Color.argb(100, 0, 100, 140); strokeWidth = dp(1.5f)
             style = Paint.Style.STROKE; strokeCap = Paint.Cap.ROUND
         }
         curves.forEach { curve ->
             val pts = mutableListOf(Pair(0, 0))
-            if (curve.dropAt60 > -500)  pts.add(Pair(60, curve.dropAt60))
+            if (curve.dropAt60 > -500)  pts.add(Pair(60,  curve.dropAt60))
             if (curve.dropAt120 > -500) pts.add(Pair(120, curve.dropAt120))
             if (curve.dropAt180 > -500) pts.add(Pair(180, curve.dropAt180))
             val path = Path()
@@ -655,8 +698,9 @@ class PostInsulinChartView @JvmOverloads constructor(
             c.drawPath(path, faintPaint)
         }
 
+        // 5. Average line (bold cyan, drawn on top)
         val avgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.parseColor("#00BCD4"); strokeWidth = dp(2.5f)
+            color = Color.parseColor("#00BCD4"); strokeWidth = dp(3f)
             style = Paint.Style.STROKE; strokeCap = Paint.Cap.ROUND; strokeJoin = Paint.Join.ROUND
         }
         val valid60  = curves.filter { it.dropAt60  > -500 }.map { it.dropAt60 }
@@ -669,11 +713,18 @@ class PostInsulinChartView @JvmOverloads constructor(
         if (valid180.isNotEmpty()) avgPath.lineTo(xAt(180), yAt(valid180.average().toInt()))
         c.drawPath(avgPath, avgPaint)
 
-        val lblPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        // 6. X-axis labels
+        val xLblPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = Color.parseColor("#6A8499"); textSize = dp(9f); textAlign = Paint.Align.CENTER
         }
         listOf(0 to "dose", 60 to "60m", 120 to "120m", 180 to "180m").forEach { (min, lbl) ->
-            c.drawText(lbl, xAt(min), h, lblPaint)
+            c.drawText(lbl, xAt(min), h, xLblPaint)
         }
+
+        // 7. Legend
+        val legPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color.parseColor("#00BCD4"); textSize = dp(9f)
+        }
+        c.drawText("— avg drop", padLeft, dp(12f), legPaint)
     }
 }

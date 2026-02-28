@@ -405,10 +405,9 @@ object GlucoseLog {
 
     fun load(ctx: Context): List<StoredReading> {
         return try {
-            val f = java.io.File(ctx.filesDir, FILE)
-            if (!f.exists()) return emptyList()
+            val text = SecureFileStore.read(ctx, FILE) ?: return emptyList()
             val type = object : com.google.gson.reflect.TypeToken<List<Entry>>() {}.type
-            val raw: List<Entry> = gson.fromJson(f.readText(), type) ?: emptyList()
+            val raw: List<Entry> = gson.fromJson(text, type) ?: emptyList()
             raw.map { StoredReading(it.t, it.mg, it.tr) }
         } catch (_: Exception) { emptyList() }
     }
@@ -416,7 +415,6 @@ object GlucoseLog {
     fun append(ctx: Context, readings: List<EgvReading>) {
         if (readings.isEmpty()) return
         try {
-            val f = java.io.File(ctx.filesDir, FILE)
             val existing = load(ctx).associateBy { it.epochMs }.toMutableMap()
             readings.forEach { r ->
                 if (r.glucoseValue() > 0 && r.epochMillis() > 0)
@@ -425,7 +423,7 @@ object GlucoseLog {
             // Keep only last 13 months
             val cutoff = System.currentTimeMillis() - 400L * 86_400_000L
             val trimmed = existing.values.filter { it.epochMs > cutoff }.sortedBy { it.epochMs }
-            f.writeText(gson.toJson(trimmed.map { Entry(it.epochMs, it.mg, it.trend) }))
+            SecureFileStore.write(ctx, FILE, gson.toJson(trimmed.map { Entry(it.epochMs, it.mg, it.trend) }))
         } catch (_: Exception) {}
     }
 }

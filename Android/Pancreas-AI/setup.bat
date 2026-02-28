@@ -386,6 +386,8 @@ for %%F in (
     FoodEntry.kt
     ReportExporter.kt
     InsightsAnalyzer.kt
+    GlucoseAlertManager.kt
+    SecureFileStore.kt
     InsightsActivity.kt
 ) do (
     if exist "%BAT_DIR%%%F" (

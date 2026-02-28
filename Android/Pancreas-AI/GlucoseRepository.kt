@@ -117,10 +117,20 @@ class GlucoseRepository(private val ctx: Context) {
      * Flow 2: two-step for modern email-based accounts.
      * Step A: AuthenticatePublisherAccount -> account GUID
      * Step B: LoginPublisherAccountById -> session ID
+     *
+     * Returns null on success=false, throws SharePasswordException if Dexcom
+     * explicitly says the password is wrong (so we can give better guidance).
      */
     private suspend fun tryLoginById(user: String, pass: String, appId: String): String? {
         val (idCode, idResp) = sharePost("General/AuthenticatePublisherAccount", nameLoginJson(user, pass, appId))
         Log.d(TAG, "Authenticate(${appId.take(8)}) HTTP $idCode: ${idResp.take(80)}")
+
+        // Dexcom explicitly rejected the password — surface a helpful error instead
+        // of silently returning null and then showing a generic message.
+        if (idCode != 200 && idResp.contains("AccountPasswordInvalid", ignoreCase = true)) {
+            throw SharePasswordException(user)
+        }
+
         if (idCode != 200) return null
         val accountId = idResp.trim().removeSurrounding("\"")
         if (!isValidSession(accountId)) return null
@@ -132,17 +142,54 @@ class GlucoseRepository(private val ctx: Context) {
         return if (isValidSession(sid)) sid else null
     }
 
+    /** Thrown when Dexcom explicitly rejects the Share API password. */
+    private class SharePasswordException(email: String) : Exception(buildPasswordError(email))
+
+    private companion object {
+        fun buildPasswordError(email: String): String {
+            val isGmail = email.endsWith("@gmail.com", ignoreCase = true)
+                       || email.endsWith("@googlemail.com", ignoreCase = true)
+            return buildString {
+                appendLine("Dexcom rejected the Share password (AccountPasswordInvalid).")
+                appendLine()
+                if (isGmail) {
+                    appendLine("⚠️ Gmail account detected — this is the most common cause.")
+                    appendLine("If you signed up for Dexcom using \"Sign in with Google\", your")
+                    appendLine("account has no native Dexcom password and the Share API won't work.")
+                    appendLine()
+                    appendLine("To fix this:")
+                    appendLine("1. Open dexcom.com in a browser and sign out")
+                    appendLine("2. Click \"Forgot password\" and enter your Gmail address")
+                    appendLine("3. Dexcom will email you a link to SET a native password")
+                    appendLine("4. Come back and enter that new password in Settings")
+                    appendLine()
+                    appendLine("Alternatively, use Developer API (OAuth) mode instead.")
+                } else {
+                    appendLine("The password stored in the app doesn't match what Dexcom has.")
+                    appendLine()
+                    appendLine("To fix this:")
+                    appendLine("1. Verify you can log into share.dexcom.com with these credentials")
+                    appendLine("2. If you recently changed your Dexcom password, update it in Settings")
+                    appendLine("3. Make sure you're using the SHARER's credentials (not a follower account)")
+                    appendLine("4. Check the Outside US toggle if you're not in the US")
+                }
+            }.trim()
+        }
+    }
+
     private suspend fun shareLogin(): String {
         val user = CredentialsManager.getShareUsername(ctx)
         val pass = CredentialsManager.getSharePassword(ctx)
 
+        // SharePasswordException propagates immediately — it carries a detailed
+        // explanation and retrying other app IDs won't help.
         for (appId in SHARE_APP_IDS) {
             tryLoginByName(user, pass, appId)?.let {
                 CredentialsManager.saveShareSessionId(ctx, it)
                 Log.d(TAG, "Share login OK via ByName(${appId.take(8)})")
                 return it
             }
-            tryLoginById(user, pass, appId)?.let {
+            tryLoginById(user, pass, appId)?.let {   // may throw SharePasswordException
                 CredentialsManager.saveShareSessionId(ctx, it)
                 Log.d(TAG, "Share login OK via ById(${appId.take(8)})")
                 return it
@@ -150,11 +197,11 @@ class GlucoseRepository(private val ctx: Context) {
         }
 
         throw Exception(
-            "Dexcom Share login returned no data access.\n" +
-            "1. Enter the SHARER's credentials (person wearing the sensor)\n" +
-            "2. Dexcom app > Share > confirm sharing is ON\n" +
-            "3. Try your email address as the username\n" +
-            "4. Check the Outside US toggle in Settings"
+            "Unable to log in to Dexcom Share.\n\n" +
+            "• Make sure you entered the SHARER's credentials (the person wearing the sensor)\n" +
+            "• Open the Dexcom app → Share and confirm sharing is turned ON\n" +
+            "• If your username is an email address, try it exactly as-is\n" +
+            "• Toggle the Outside US switch in Settings if you're not in the US"
         )
     }
 
@@ -352,6 +399,17 @@ class GlucoseRepository(private val ctx: Context) {
                     val accountId = r2a.trim().removeSurrounding("\"")
                     sb.appendLine("Authenticate: HTTP $c2a")
                     sb.appendLine("  -> ${r2a.take(120)}")
+
+                    // Annotate the password-invalid case so it's unmistakable in the log
+                    if (r2a.contains("AccountPasswordInvalid", ignoreCase = true)) {
+                        sb.appendLine("  ⚠️  PASSWORD REJECTED by Dexcom Share API")
+                        if (user.contains("@gmail.com", ignoreCase = true) ||
+                            user.contains("@googlemail.com", ignoreCase = true)) {
+                            sb.appendLine("  ⚠️  Gmail account — likely signed up via Google SSO.")
+                            sb.appendLine("      The Share API requires a native Dexcom password.")
+                            sb.appendLine("      Fix: go to dexcom.com → Forgot Password to set one.")
+                        }
+                    }
 
                     // Flow 2b: LoginById (only if we got an account ID)
                     if (c2a == 200 && isValidSession(accountId)) {

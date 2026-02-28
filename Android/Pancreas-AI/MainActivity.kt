@@ -4,7 +4,9 @@ import android.app.AlertDialog
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.graphics.Color
+import android.os.Build
 import android.os.Bundle
 import android.view.Gravity
 import android.view.Menu
@@ -16,8 +18,10 @@ import android.widget.LinearLayout
 import android.widget.Spinner
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import com.github.mikephil.charting.components.LimitLine
 import com.github.mikephil.charting.components.XAxis
 import com.github.mikephil.charting.data.Entry
@@ -40,11 +44,24 @@ class MainActivity : AppCompatActivity() {
 
     private var currentReadings: List<EgvReading> = emptyList()
 
+    private val notificationPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) {
+            Toast.makeText(this, "Notifications enabled ✓", Toast.LENGTH_SHORT).show()
+        } else {
+            Toast.makeText(this, "Notification permission denied — alerts won't appear", Toast.LENGTH_LONG).show()
+            CredentialsManager.setNotificationsEnabled(this, false)
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
         setSupportActionBar(binding.toolbar)
+
+        GlucoseAlertManager.createNotificationChannel(this)
 
         setupChart()
         observeViewModel()
@@ -149,12 +166,14 @@ class MainActivity : AppCompatActivity() {
                 gridColor = Color.parseColor("#1A2A3A")
                 axisLineColor = Color.parseColor("#1A2A3A")
                 axisMinimum = 40f; axisMaximum = 400f
-                addLimitLine(LimitLine(70f, "Low").apply {
+                val low  = CredentialsManager.getGlucoseLow(this@MainActivity).toFloat()
+                val high = CredentialsManager.getGlucoseHigh(this@MainActivity).toFloat()
+                addLimitLine(LimitLine(low, "Low ${low.toInt()}").apply {
                     lineColor = Color.parseColor("#FF4444"); lineWidth = 1.5f
                     textColor = Color.parseColor("#FF4444"); textSize = 9f
                     enableDashedLine(10f, 6f, 0f)
                 })
-                addLimitLine(LimitLine(180f, "High").apply {
+                addLimitLine(LimitLine(high, "High ${high.toInt()}").apply {
                     lineColor = Color.parseColor("#FF8800"); lineWidth = 1.5f
                     textColor = Color.parseColor("#FF8800"); textSize = 9f
                     enableDashedLine(10f, 6f, 0f)
@@ -336,14 +355,16 @@ class MainActivity : AppCompatActivity() {
 
     private fun updateCurrentReading(reading: EgvReading) {
         val v = reading.glucoseValue()
+        val low  = CredentialsManager.getGlucoseLow(this)
+        val high = CredentialsManager.getGlucoseHigh(this)
         binding.tvCurrentGlucose.text = v.toString()
-        binding.tvCurrentGlucose.setTextColor(reading.glucoseColor())
+        binding.tvCurrentGlucose.setTextColor(reading.glucoseColor(low, high))
         binding.tvTrend.text = reading.trendArrow()
-        binding.tvTrend.setTextColor(reading.glucoseColor())
+        binding.tvTrend.setTextColor(reading.glucoseColor(low, high))
         binding.tvUnit.text = "mg/dL"
-        val label = when { v < 70 -> "LOW"; v <= 180 -> "IN RANGE"; else -> "HIGH" }
+        val label = when { v < low -> "LOW"; v <= high -> "IN RANGE"; else -> "HIGH" }
         binding.tvRangeLabel.text = label
-        binding.tvRangeLabel.setTextColor(reading.glucoseColor())
+        binding.tvRangeLabel.setTextColor(reading.glucoseColor(low, high))
         binding.tvReadingTime.text = "at ${timeFmt.format(Date(reading.epochMillis()))}"
     }
 
@@ -353,13 +374,15 @@ class MainActivity : AppCompatActivity() {
         val values  = readings.map { it.glucoseValue() }
         val avg     = values.average()
         val total   = values.size.toDouble()
-        val inRange = values.count { it in 70..180 }
-        val low     = values.count { it < 70 }
-        val high    = values.count { it > 180 }
+        val low     = CredentialsManager.getGlucoseLow(this)
+        val high    = CredentialsManager.getGlucoseHigh(this)
+        val inRange = values.count { it in low..high }
+        val lowCnt  = values.count { it < low }
+        val highCnt = values.count { it > high }
         binding.tvAvgGlucose.text   = "%.0f".format(avg)
         binding.tvTimeInRange.text  = "${(inRange / total * 100).toInt()}%"
-        binding.tvTimeLow.text      = "${(low    / total * 100).toInt()}%"
-        binding.tvTimeHigh.text     = "${(high   / total * 100).toInt()}%"
+        binding.tvTimeLow.text      = "${(lowCnt  / total * 100).toInt()}%"
+        binding.tvTimeHigh.text     = "${(highCnt / total * 100).toInt()}%"
         binding.tvReadingCount.text = "${readings.size} readings"
     }
 
@@ -370,7 +393,7 @@ class MainActivity : AppCompatActivity() {
         val since  = System.currentTimeMillis() - 24 * 3_600_000L
         val recent = entries.filter { it.timestampMs >= since }.take(8)
         val totalUnits = recent.sumOf { it.units }
-        binding.tvTotalInsulin.text = if (recent.isNotEmpty()) "%.1f u (24h)".format(totalUnits) else ""
+        binding.tvTotalInsulin.text = if (recent.isNotEmpty()) "%.2f u (24h)".format(totalUnits) else ""
 
         binding.insulinListContainer.removeAllViews()
         if (recent.isEmpty()) { binding.tvNoInsulin.visibility = View.VISIBLE; return }
@@ -396,7 +419,7 @@ class MainActivity : AppCompatActivity() {
                 layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
             }
             info.addView(TextView(this).apply {
-                text = "%.1f u  •  %s".format(dose.units, dose.type.label)
+                text = "%.2f u  •  %s".format(dose.units, dose.type.label)
                 textSize = 14f; setTextColor(Color.parseColor("#E0E8F0"))
             })
             info.addView(TextView(this).apply {
@@ -528,7 +551,7 @@ class MainActivity : AppCompatActivity() {
         val container = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(64, 32, 64, 16) }
 
         val unitsInput = EditText(this).apply {
-            hint = "Units (e.g. 4.5)"
+            hint = "Units (e.g. 12.95)"
             inputType = android.text.InputType.TYPE_CLASS_NUMBER or android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL
             setTextColor(Color.parseColor("#E0E8F0")); setHintTextColor(Color.parseColor("#546E7A"))
         }
@@ -556,7 +579,7 @@ class MainActivity : AppCompatActivity() {
                 if (units != null && units > 0) {
                     val type = InsulinType.values()[typeSpinner.selectedItemPosition]
                     viewModel.addInsulin(units, type, doseTime.timeInMillis, noteInput.text.toString().trim())
-                    Toast.makeText(this, "%.1f u logged".format(units), Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, "%.2f u logged".format(units), Toast.LENGTH_SHORT).show()
                 } else {
                     Toast.makeText(this, "Enter a valid number of units", Toast.LENGTH_SHORT).show()
                 }

@@ -1,13 +1,19 @@
 package com.pancreas.ai
 
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.text.InputType
 import android.view.MenuItem
 import android.view.View
+import android.widget.ArrayAdapter
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.pancreas.ai.databinding.ActivitySettingsBinding
 import kotlinx.coroutines.launch
@@ -17,6 +23,21 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var binding: ActivitySettingsBinding
     private var passwordVisible = false
     private var secretVisible   = false
+
+    private val notifPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) {
+            CredentialsManager.setNotificationsEnabled(this, true)
+            binding.switchNotifEnabled.isChecked = true
+            binding.layoutNotifOptions.visibility = View.VISIBLE
+            showToast("Notifications enabled ✓")
+        } else {
+            binding.switchNotifEnabled.isChecked = false
+            CredentialsManager.setNotificationsEnabled(this, false)
+            showToast("Permission denied — notifications won't work")
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -69,6 +90,40 @@ class SettingsActivity : AppCompatActivity() {
         val interval = CredentialsManager.getRefreshInterval(this)
         binding.sliderInterval.value = interval.toFloat()
         binding.tvIntervalValue.text = "$interval min"
+
+        // Personal info
+        val h = CredentialsManager.getHeightIn(this)
+        val w = CredentialsManager.getWeightLb(this)
+        val age = CredentialsManager.getAge(this)
+        val gender = CredentialsManager.getGender(this)
+        if (h > 0) binding.etHeight.setText("%.1f".format(h))
+        if (w > 0) binding.etWeight.setText("%.1f".format(w))
+        if (age > 0) binding.etAge.setText(age.toString())
+
+        val genderOptions = listOf("Prefer not to say", "Female", "Male", "Non-binary", "Other")
+        binding.spinnerGender.adapter = ArrayAdapter(this,
+            android.R.layout.simple_spinner_dropdown_item, genderOptions)
+        val genderIdx = genderOptions.indexOfFirst { it.equals(gender, ignoreCase = true) }
+            .takeIf { it >= 0 } ?: 0
+        binding.spinnerGender.setSelection(genderIdx)
+
+        // Glucose thresholds
+        val high = CredentialsManager.getGlucoseHigh(this)
+        val low  = CredentialsManager.getGlucoseLow(this)
+        binding.sliderHigh.value = high.toFloat().coerceIn(120f, 300f)
+        binding.sliderLow.value  = low.toFloat().coerceIn(50f, 100f)
+        binding.tvHighValue.text = "$high mg/dL"
+        binding.tvLowValue.text  = "$low mg/dL"
+
+        // Notifications
+        val notifEnabled = CredentialsManager.isNotificationsEnabled(this)
+        binding.switchNotifEnabled.isChecked  = notifEnabled
+        binding.layoutNotifOptions.visibility = if (notifEnabled) View.VISIBLE else View.GONE
+        binding.switchNotifHigh.isChecked     = CredentialsManager.isPredictHighEnabled(this)
+        binding.switchNotifLow.isChecked      = CredentialsManager.isPredictLowEnabled(this)
+        val projMin = CredentialsManager.getProjectionMinutes(this)
+        binding.sliderProjection.value    = projMin.toFloat().coerceIn(10f, 40f)
+        binding.tvProjectionMinutes.text  = "$projMin min"
     }
 
     private fun setupListeners() {
@@ -157,6 +212,44 @@ class SettingsActivity : AppCompatActivity() {
 
         binding.tvDevPortalLink.setOnClickListener {
             startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://developer.dexcom.com/")))
+        }
+
+        // Personal info
+        binding.btnSavePersonalInfo.setOnClickListener { savePersonalInfo() }
+
+        // Glucose thresholds — save immediately on slider change
+        binding.sliderHigh.addOnChangeListener { _, value, _ ->
+            val v = value.toInt()
+            binding.tvHighValue.text = "$v mg/dL"
+            val low = CredentialsManager.getGlucoseLow(this)
+            CredentialsManager.saveGlucoseThresholds(this, v, low)
+        }
+        binding.sliderLow.addOnChangeListener { _, value, _ ->
+            val v = value.toInt()
+            binding.tvLowValue.text = "$v mg/dL"
+            val high = CredentialsManager.getGlucoseHigh(this)
+            CredentialsManager.saveGlucoseThresholds(this, high, v)
+        }
+
+        // Notifications
+        binding.switchNotifEnabled.setOnCheckedChangeListener { _, checked ->
+            if (checked) {
+                requestNotificationPermission()
+            } else {
+                CredentialsManager.setNotificationsEnabled(this, false)
+                binding.layoutNotifOptions.visibility = View.GONE
+            }
+        }
+        binding.switchNotifHigh.setOnCheckedChangeListener { _, checked ->
+            CredentialsManager.setPredictHighEnabled(this, checked)
+        }
+        binding.switchNotifLow.setOnCheckedChangeListener { _, checked ->
+            CredentialsManager.setPredictLowEnabled(this, checked)
+        }
+        binding.sliderProjection.addOnChangeListener { _, value, _ ->
+            val mins = value.toInt()
+            binding.tvProjectionMinutes.text = "$mins min"
+            CredentialsManager.setProjectionMinutes(this, mins)
         }
     }
 
@@ -274,6 +367,38 @@ class SettingsActivity : AppCompatActivity() {
 
         if (!CredentialsManager.isConnected(this))
             binding.tvDiagnosticResult.visibility = View.GONE
+    }
+
+    private fun savePersonalInfo() {
+        val heightStr = binding.etHeight.text?.toString()?.trim() ?: ""
+        val weightStr = binding.etWeight.text?.toString()?.trim() ?: ""
+        val ageStr    = binding.etAge.text?.toString()?.trim() ?: ""
+        val gender    = binding.spinnerGender.selectedItem?.toString() ?: ""
+
+        val height = heightStr.toFloatOrNull() ?: CredentialsManager.getHeightIn(this)
+        val weight = weightStr.toFloatOrNull() ?: CredentialsManager.getWeightLb(this)
+        val age    = ageStr.toIntOrNull()      ?: CredentialsManager.getAge(this)
+
+        CredentialsManager.savePersonalInfo(this, height, weight, gender, age)
+        showToast("Personal info saved ✓")
+    }
+
+    private fun requestNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            when {
+                ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+                    == PackageManager.PERMISSION_GRANTED -> {
+                    // Already granted
+                    CredentialsManager.setNotificationsEnabled(this, true)
+                    binding.layoutNotifOptions.visibility = View.VISIBLE
+                }
+                else -> notifPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        } else {
+            // Pre-Android 13 — permission granted at install time
+            CredentialsManager.setNotificationsEnabled(this, true)
+            binding.layoutNotifOptions.visibility = View.VISIBLE
+        }
     }
 
     private fun showToast(msg: String) = Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()

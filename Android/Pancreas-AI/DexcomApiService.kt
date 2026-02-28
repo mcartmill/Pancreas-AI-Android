@@ -99,6 +99,17 @@ data class EgvReading(
         else       -> if (v > 250) android.graphics.Color.parseColor("#FF4444")
                       else android.graphics.Color.parseColor("#546E7A")
     }
+
+    fun glucoseColor(low: Int, high: Int): Int {
+        val v = glucoseValue()
+        return when {
+            v < low         -> android.graphics.Color.parseColor("#FF4444")
+            v <= low + 10   -> android.graphics.Color.parseColor("#FF8800")
+            v <= high       -> android.graphics.Color.parseColor("#00E676")
+            v <= high + 40  -> android.graphics.Color.parseColor("#FF8800")
+            else            -> android.graphics.Color.parseColor("#FF4444")
+        }
+    }
 }
 
 interface DexcomApiService {

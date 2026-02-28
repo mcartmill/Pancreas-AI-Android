@@ -3,7 +3,6 @@ package com.pancreas.ai
 import android.content.Context
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
-import java.io.File
 import java.util.UUID
 
 enum class InsulinType(val label: String) {
@@ -25,11 +24,9 @@ object InsulinManager {
     private const val FILE_NAME = "insulin_log.json"
     private val gson = Gson()
 
-    private fun file(ctx: Context) = File(ctx.filesDir, FILE_NAME)
-
     fun load(ctx: Context): List<InsulinEntry> {
         return try {
-            val text = file(ctx).takeIf { it.exists() }?.readText() ?: return emptyList()
+            val text = SecureFileStore.read(ctx, FILE_NAME) ?: return emptyList()
             val type = object : TypeToken<List<InsulinEntryJson>>() {}.type
             val raw: List<InsulinEntryJson> = gson.fromJson(text, type) ?: emptyList()
             raw.map { it.toEntry() }
@@ -41,7 +38,7 @@ object InsulinManager {
     fun save(ctx: Context, entries: List<InsulinEntry>) {
         try {
             val json = gson.toJson(entries.map { InsulinEntryJson.from(it) })
-            file(ctx).writeText(json)
+            SecureFileStore.write(ctx, FILE_NAME, json)
         } catch (_: Exception) {}
     }
 
