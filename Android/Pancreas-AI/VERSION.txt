@@ -1,0 +1,8 @@
+versionCode=105
+versionName=1.0.5
+
+Update in app/build.gradle:
+    defaultConfig {
+        versionCode 105
+        versionName "1.0.5"
+    }

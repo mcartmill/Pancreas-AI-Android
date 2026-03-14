@@ -52,6 +52,9 @@ object CredentialsManager {
     private const val KEY_LAST_HIGH_NOTIF = "notif_last_high_ms"
     private const val KEY_LAST_LOW_NOTIF  = "notif_last_low_ms"
 
+    // Disclaimer acceptance — bump the suffix if disclaimer content changes
+    private const val KEY_DISCLAIMER      = "disclaimer_accepted_v1"
+
     private fun prefs(ctx: Context): SharedPreferences {
         // EncryptedSharedPreferences can throw on reinstall/upgrade if the Keystore
         // entry no longer matches the stored prefs file. We delete and recreate on
@@ -259,4 +262,11 @@ object CredentialsManager {
             "&response_type=code" +
             "&scope=$OAUTH_SCOPE"
     }
+
+    // ── Disclaimer ────────────────────────────────────────────────────────
+    fun hasAcceptedDisclaimer(ctx: Context): Boolean =
+        prefs(ctx).getBoolean(KEY_DISCLAIMER, false)
+
+    fun setDisclaimerAccepted(ctx: Context) =
+        prefs(ctx).edit().putBoolean(KEY_DISCLAIMER, true).apply()
 }

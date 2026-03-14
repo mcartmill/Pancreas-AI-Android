@@ -192,8 +192,8 @@ echo     defaultConfig {
 echo         applicationId "com.pancreas.ai"
 echo         minSdk 26
 echo         targetSdk 34
-echo         versionCode 15
-echo         versionName "1.5.0"
+echo         versionCode 106
+echo         versionName "1.0.6"
 echo     }
 echo     buildFeatures { viewBinding true }
 echo     buildTypes {
@@ -389,6 +389,7 @@ for %%F in (
     GlucoseAlertManager.kt
     SecureFileStore.kt
     InsightsActivity.kt
+    DisclaimerActivity.kt
 ) do (
     if exist "%BAT_DIR%%%F" (
         copy /Y "%BAT_DIR%%%F" "%PKG%\%%F" >nul

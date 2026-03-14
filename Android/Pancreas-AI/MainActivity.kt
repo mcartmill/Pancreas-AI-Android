@@ -57,6 +57,14 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Show disclaimer on first launch — user must accept before using the app
+        if (!CredentialsManager.hasAcceptedDisclaimer(this)) {
+            startActivity(Intent(this, DisclaimerActivity::class.java))
+            finish()
+            return
+        }
+
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
         setSupportActionBar(binding.toolbar)
@@ -105,11 +113,17 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onOptionsItemSelected(item: MenuItem) = when (item.itemId) {
-        R.id.action_settings -> { startActivity(Intent(this, SettingsActivity::class.java)); true }
-        R.id.action_refresh  -> { viewModel.refresh(); true }
-        R.id.action_export   -> { showExportDialog(); true }
-        R.id.action_insights -> { startActivity(Intent(this, InsightsActivity::class.java)); true }
-        else                 -> super.onOptionsItemSelected(item)
+        R.id.action_settings   -> { startActivity(Intent(this, SettingsActivity::class.java)); true }
+        R.id.action_disclaimer -> {
+                val i = Intent(this, DisclaimerActivity::class.java)
+                i.putExtra(DisclaimerActivity.EXTRA_FORCE_SHOW, true)
+                startActivity(i)
+                true
+            }
+        R.id.action_refresh    -> { viewModel.refresh(); true }
+        R.id.action_export     -> { showExportDialog(); true }
+        R.id.action_insights   -> { startActivity(Intent(this, InsightsActivity::class.java)); true }
+        else                   -> super.onOptionsItemSelected(item)
     }
 
     // ── Time Range ────────────────────────────────────────────────────────────
