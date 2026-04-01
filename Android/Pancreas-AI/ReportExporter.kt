@@ -23,12 +23,21 @@ object ReportExporter {
     private val timeFmt   = SimpleDateFormat("h:mm a", Locale.getDefault())
     private val fileFmt   = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
 
-    fun export(ctx: Context, period: ReportPeriod): Intent {
+    fun export(ctx: Context, period: ReportPeriod, liveReadings: List<EgvReading> = emptyList()): Intent {
         val toMs   = System.currentTimeMillis()
         val fromMs = toMs - period.days * 86_400_000L
 
-        // Load data for window
-        val glucose  = loadGlucoseForPeriod(ctx, fromMs, toMs)
+        // Merge persisted log with any live readings currently in memory.
+        // Deduplicate by epochMs so a reading never appears twice.
+        val logReadings = loadGlucoseForPeriod(ctx, fromMs, toMs)
+        val liveStored  = liveReadings
+            .filter { it.glucoseValue() > 0 && it.epochMillis() in fromMs..toMs }
+            .map     { StoredReading(it.epochMillis(), it.glucoseValue(), it.trendArrow()) }
+        val glucose = (logReadings + liveStored)
+            .associateBy { it.epochMs }   // deduplicate
+            .values
+            .sortedBy { it.epochMs }
+
         val insulin  = InsulinManager.forWindow(ctx, fromMs, toMs)
         val food     = FoodManager.forWindow(ctx, fromMs, toMs)
 
@@ -424,6 +433,9 @@ object GlucoseLog {
             val cutoff = System.currentTimeMillis() - 400L * 86_400_000L
             val trimmed = existing.values.filter { it.epochMs > cutoff }.sortedBy { it.epochMs }
             SecureFileStore.write(ctx, FILE, gson.toJson(trimmed.map { Entry(it.epochMs, it.mg, it.trend) }))
-        } catch (_: Exception) {}
+            android.util.Log.d("GlucoseLog", "Stored ${trimmed.size} readings (added ${readings.size} new)")
+        } catch (e: Exception) {
+            android.util.Log.e("GlucoseLog", "Failed to append readings: ${e.javaClass.simpleName} — ${e.message}")
+        }
     }
 }

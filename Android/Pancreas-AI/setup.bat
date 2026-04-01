@@ -192,8 +192,8 @@ echo     defaultConfig {
 echo         applicationId "com.pancreas.ai"
 echo         minSdk 26
 echo         targetSdk 34
-echo         versionCode 106
-echo         versionName "1.0.6"
+echo         versionCode 107
+echo         versionName "1.0.7"
 echo     }
 echo     buildFeatures { viewBinding true }
 echo     buildTypes {

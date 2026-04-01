@@ -246,3 +246,11 @@ PancreasAI is a personal project and is not a medical device. Always consult you
 
 
 
+v1.0.7 — Report Data Fix
+
+• Reports now correctly show glucose data for the selected period
+
+• Live dashboard readings are included in reports even before full history has accumulated
+
+• Background log now captures 24h of data on every refresh regardless of chart window setting
+

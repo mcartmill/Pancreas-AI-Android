@@ -245,7 +245,7 @@ class DisclaimerActivity : AppCompatActivity() {
 
         // Version note
         contentLayout.addView(TextView(this).apply {
-            text = "PancreasAI v1.0.6  ·  For personal use on Android"
+            text = "PancreasAI v1.0.7  ·  For personal use on Android"
             textSize = 11f
             setTextColor(Color.parseColor("#374955"))
             setPadding(0, dp(16), 0, dp(8))

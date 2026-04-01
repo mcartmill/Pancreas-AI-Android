@@ -745,7 +745,7 @@ class MainActivity : AppCompatActivity() {
             .setSingleChoiceItems(labels, selected) { _, which -> selected = which }
             .setPositiveButton("Export") { _, _ ->
                 try {
-                    val intent = ReportExporter.export(this, periods[selected])
+                    val intent = ReportExporter.export(this, periods[selected], currentReadings)
                     startActivity(Intent.createChooser(intent, "Share Report via..."))
                 } catch (e: Exception) {
                     Toast.makeText(this, "Export failed: ${e.message}", Toast.LENGTH_LONG).show()

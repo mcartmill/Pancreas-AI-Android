@@ -142,7 +142,18 @@ class GlucoseViewModel(app: Application) : AndroidViewModel(app) {
         try {
             val hours    = _chartHours.value ?: CredentialsManager.getChartHours(ctx)
             val readings = repository.fetchReadings(hours)
-            GlucoseLog.append(ctx, readings)   // persist for report export
+
+            // Always log at least 24h so reports have meaningful history even
+            // when the chart is set to a short window (1h, 3h, etc.).
+            // If the chart window is already >= 24h we use what we have.
+            // The extra fetch is skipped when hours >= 24 to avoid a double call.
+            val logReadings = if (hours >= 24) {
+                readings
+            } else {
+                try { repository.fetchReadings(24) } catch (_: Exception) { readings }
+            }
+            GlucoseLog.append(ctx, logReadings)  // persist for report export
+
             GlucoseAlertManager.evaluate(ctx, readings)  // check for projected highs/lows
             _uiState.postValue(UiState.Success(readings))
             _lastUpdated.postValue(System.currentTimeMillis())
